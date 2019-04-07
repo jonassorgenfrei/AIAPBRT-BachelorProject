@@ -33,9 +33,9 @@
 
  // core/transform.h*
 #include "pbrt.h"
-//#include "stringprint.h"
+#include "stringprint.h"
 #include "geometry.h"
-//#include "quaternion.h"
+#include "quaternion.h"
 
 namespace pbrt {
 
@@ -76,6 +76,7 @@ namespace pbrt {
 
 		// Transposes the current matrix and returns a new matrix
 		friend Matrix4x4 Transpose(const Matrix4x4 &);
+
 		void Print(FILE *f) const {
 			fprintf(f, "[ ");
 			for (int i = 0; i < 4; ++i) {
@@ -100,6 +101,7 @@ namespace pbrt {
 					m1.m[i][2] * m2.m[2][j] + m1.m[i][3] * m2.m[3][j];
 			return r;
 		}
+
 		// inverts the current Matrix
 		friend Matrix4x4 Inverse(const Matrix4x4 &);
 
@@ -137,14 +139,15 @@ namespace pbrt {
 					mat[3][3]);
 				mInv = Inverse(m);
 			}
+
+
 			Transform(const Matrix4x4 &m) : m(m), mInv(Inverse(m)) {}
+
 			// taking matrix and (pre-computed) inverse to avoid the
 			// expense and potential loss of precision from computing a general
 			// 4x4 matrix inverse
 			Transform(const Matrix4x4 &m, 
-						const Matrix4x4 &mInv)
-				: m(m), mInv(mInv) {
-			}
+						const Matrix4x4 &mInv) : m(m), mInv(mInv) {}
 
 			void Print(FILE *f) const;
 			
@@ -178,6 +181,7 @@ namespace pbrt {
 					}
 				return false;
 			}
+
 			// checks if the given matrix is an Identity Matrix
 			bool IsIdentity() const {
 				return (m.m[0][0] == 1.f && m.m[0][1] == 0.f && m.m[0][2] == 0.f &&
@@ -193,29 +197,99 @@ namespace pbrt {
 			// returns the inverse of the current matrix
 			const Matrix4x4 &GetInverseMatrix() const { return mInv; }
 
-			// test if transformation has a scaling term in it
-			// by taking the three coordinate axes and see if any of their lengths
-			// are appreciably different from one
+			/// <summary>
+			/// Determines whether this instance has scale.
+			/// Test if transformation has a scaling term in it
+			/// by taking the three coordinate axes and see if any of their lengths
+			/// are appreciably different from one
+			/// </summary>
+			/// <returns>
+			///   <c>true</c> if this instance has scale; otherwise, <c>false</c>.
+			/// </returns>
 			bool HasScale() const {
 				Float la2 = (*this)(Vector3f(1, 0, 0)).LengthSquared();
 				Float lb2 = (*this)(Vector3f(0, 1, 0)).LengthSquared();
 				Float lc2 = (*this)(Vector3f(0, 0, 1)).LengthSquared();
 
-			#define NOT_ONE(x) ((x) < .999f || NOT_ONE(x) > 1.001f)
+#define NOT_ONE(x) ((x) < .999f || (x) > 1.001f)
 				return (NOT_ONE(la2) || NOT_ONE(lb2) || NOT_ONE(lc2));
-			# NOT_ONE	
+#undef NOT_ONE
 			};
+
+			/// <summary>
+			/// Point transformation routine
+			/// Takes a point (x,y,z) and implicitly represents it as the homogeneous column vector
+			/// [x y z 1]T. It then transforms the point by pre-multiplying this vector with the 
+			/// transformation matrix.
+			/// Finally it divides by w to convert back to a non homogeneous point representation.
+			/// </summary>
+			/// <param name="p">Point to transform</param>
+			/// <returns></returns>
 			template <typename T>
 			inline Point3<T> operator()(const Point3<T> &p) const;
+
+			/// <summary>
+			/// Vector transformation routine
+			/// Simplified since the implicit homogeneous w coordinate is zero.
+			/// </summary>
+			/// <param name="v">Vector to transform</param>
+			/// <returns></returns>
 			template <typename T>
 			inline Vector3<T> operator()(const Vector3<T> &v) const;
+
+			/// <summary>
+			/// Normal transformation routine
+			/// Multiplies the normal with the inverse transpose of the transformation matrix
+			/// </summary>
+			/// <param name="">The .</param>
+			/// <returns></returns>
 			template <typename T>
 			inline Normal3<T> operator()(const Normal3<T> &) const;
+
+			/// <summary>
+			/// Ray transformation routine
+			/// Transforming the origin and direction and copying the other data members
+			/// </summary>
+			/// <param name="r">The r.</param>
+			/// <returns></returns>
 			inline Ray operator()(const Ray &r) const;
+
+			/// <summary>
+			/// Ray transformation routine
+			/// Transforming the origin and direction and copying the other data members
+			/// </summary>
+			/// <param name="r">The r.</param>
+			/// <returns></returns>
 			inline RayDifferential operator()(const RayDifferential &r) const;
+
+			/// <summary>
+			/// Bounding Box transformation routine
+			/// Transform all eight of its corner vertices and then compute a new bounding box that encompasses
+			/// those points.
+			/// TODO: MAKE MORE EFFICIENT!
+			/// </summary>
+			/// <param name="b">The b.</param>
+			/// <returns></returns>
 			Bounds3f operator()(const Bounds3f &b) const;
+
+			
+			/// <summary>
+			/// Composition of Transformations
+			/// Multiplies the given Transformation to the current matrix.
+			/// </summary>
+			/// <param name="t2">Transformation</param>
+			/// <returns></returns>
 			Transform operator*(const Transform &t2) const;
+
+			/// <summary>
+			/// Checks if the handedness is changed by a transformation. 
+			/// (happens only when the determinant of the transformation's upper-left 3x3 sub matrix is negative)
+			/// </summary>
+			/// <returns>
+			///		<c>true</c> if the handedness is changed; otherwise, <c>false</c>.
+			/// </returns>
 			bool SwapsHandedness() const;
+
 			SurfaceInteraction operator()(const SurfaceInteraction &si) const;
 			template <typename T>
 			inline Point3<T> operator()(const Point3<T> &pt,
@@ -270,6 +344,107 @@ namespace pbrt {
 	// ----------------------
 	Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up);
 	
+
+	// Transform Inline Functions	
+
+	template <typename T>
+	inline Point3<T> Transform::operator()(const Point3<T> &p) const {
+		T x = p.x, y = p.y, z = p.z;
+		T xp = m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z + m.m[0][3];
+		T yp = m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z + m.m[1][3];
+		T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
+		T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
+		CHECK_NE(wp, 0);
+		if (wp == 1)	// skips division if w is 1
+			return Point3<T>(xp, yp, zp);
+		else
+			return Point3<T>(xp, yp, zp) / wp;
+	}
+
+	template <typename T>
+	inline Vector3<T> Transform::operator()(const Vector3<T> &v) const {
+		T x = v.x, y = v.y, z = v.z;
+		return Vector3<T>(	m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z,
+							m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z,
+							m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z);
+	}	
+
+	template <typename T>
+	inline Normal3<T> Transform::operator()(const Normal3<T> &n) const {
+		T x = n.x, y = n.y, z = n.z;
+		return Normal3<T>(mInv.m[0][0] * x + mInv.m[1][0] * y + mInv.m[2][0] * z,
+							mInv.m[0][1] * x + mInv.m[1][1] * y + mInv.m[2][1] * z,
+							mInv.m[0][2] * x + mInv.m[1][2] * y + mInv.m[2][2] * z);
+	}	
+
+	inline Ray Transform::operator()(const Ray &r) const {
+		Vector3f oError;
+		Point3f o = (*this)(r.o, &oError);
+		Vector3f d = (*this)(r.d);
+
+		// Offset ray origin to edge of error bounds and compute _tMax_
+		Float lengthSquared = d.LengthSquared();
+		Float tMax = r.tMax;
+		if (lengthSquared > 0) {	// manage floating-point round-off errors
+			Float dt = Dot(Abs(d), oError) / lengthSquared;
+			o += d * dt;
+			tMax -= dt;
+		}
+
+		return Ray(o, d, tMax, r.time, r.medium);
+	}
+	inline RayDifferential Transform::operator()(const RayDifferential &r) const {
+		Ray tr = (*this)(Ray(r));
+		RayDifferential ret(tr.o, tr.d, tr.tMax, tr.time, tr.medium);
+		ret.hasDifferentials = r.hasDifferentials;
+		ret.rxOrigin = (*this)(r.rxOrigin);
+		ret.ryOrigin = (*this)(r.ryOrigin);
+		ret.rxDirection = (*this)(r.rxDirection);
+		ret.ryDirection = (*this)(r.ryDirection);
+		return ret;
+	}
+	
+	// AnimatedTransform Declarations
+	class AnimatedTransform {
+	public:
+		// AnimatedTransform Public Methods
+		AnimatedTransform(const Transform *startTransform, Float startTime,
+			const Transform *endTransform, Float endTime);
+		static void Decompose(const Matrix4x4 &m, Vector3f *T, Quaternion *R,
+			Matrix4x4 *S);
+		void Interpolate(Float time, Transform *t) const;
+		Ray operator()(const Ray &r) const;
+		RayDifferential operator()(const RayDifferential &r) const;
+		Point3f operator()(Float time, const Point3f &p) const;
+		Vector3f operator()(Float time, const Vector3f &v) const;
+		bool HasScale() const {
+			return startTransform->HasScale() || endTransform->HasScale();
+		}
+		Bounds3f MotionBounds(const Bounds3f &b) const;
+		Bounds3f BoundPointMotion(const Point3f &p) const;
+
+	private:
+		// AnimatedTransform Private Data
+		const Transform *startTransform, *endTransform;
+		const Float startTime, endTime;
+		const bool actuallyAnimated;
+		Vector3f T[2];
+		Quaternion R[2];
+		Matrix4x4 S[2];
+		bool hasRotation;
+		struct DerivativeTerm {
+			DerivativeTerm() {}
+			DerivativeTerm(Float c, Float x, Float y, Float z)
+				: kc(c), kx(x), ky(y), kz(z) {}
+			Float kc, kx, ky, kz;
+			Float Eval(const Point3f &p) const {
+				return kc + kx * p.x + ky * p.y + kz * p.z;
+			}
+		};
+		DerivativeTerm c1[3], c2[3], c3[3], c4[3], c5[3];
+	};
+
+
 }  // namespace pbrt
 
 #endif // PBRT_CORE_TRANSFORM_H

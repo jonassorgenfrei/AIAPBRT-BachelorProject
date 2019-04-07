@@ -277,7 +277,7 @@ namespace pbrt {
 		// unary negation operator (returns a bew vector pointing in the opposite direction of the original one)
 		Vector3<T> operator-() const { return Vector3<T>(-x, -y, -z); }
 
-		Float LengthSquared() const { return x * x + y * y + z*zs; }
+		Float LengthSquared() const { return x * x + y * y + z*z; }
 		Float Length() const { return std::sqrt(LengthSquared()); }
 		explicit Vector3(const Normal3<T> &n);
 
@@ -702,21 +702,23 @@ namespace pbrt {
 			return z;
 		}
 
-		template <typename T>
-		inline std::ostream &operator<<(std::ostream &os, const Normal3<T> &v) {
-			os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
-			return os;
-		}
-
-		template <>
-		inline std::ostream &operator<<(std::ostream &os, const Normal3<Float> &v) {
-			os << StringPrintf("[ %f, %f, %f ]", v.x, v.y, v.z);
-			return os;
-		}
-
+		
 		// Normal3 Public Data 
 		T x, y, z;
 	};
+
+	template <typename T>
+	inline std::ostream &operator<<(std::ostream &os, const Normal3<T> &v) {
+		os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
+		return os;
+	}
+
+	template <>
+	inline std::ostream &operator<<(std::ostream &os, const Normal3<Float> &v) {
+		os << StringPrintf("[ %f, %f, %f ]", v.x, v.y, v.z);
+		return os;
+	}
+
 
 	typedef Normal3<Float> Normal3f;
 

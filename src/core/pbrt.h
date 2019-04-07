@@ -32,6 +32,7 @@
 #define PBRT_CORE_PBRT_H
 
 // core/pbrt.h*
+// Included by all other files in the system.
 // Global Include Files
 #include <type_traits>
 #include <algorithm>
@@ -42,7 +43,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-//#include "error.h" // TODO:
+#include "error.h" // TODO:
 #ifdef PBRT_HAVE_MALLOC_H
 #include <malloc.h>  // for _alloca, memalign
 #endif
@@ -83,6 +84,9 @@
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
 
+/// <summary>
+/// 
+/// </summary>
 namespace pbrt {
 	// Global Forward Declarations
 	class Scene;
@@ -147,9 +151,9 @@ namespace pbrt {
 	struct Distribution1D;
 	class Distribution2D;
 #ifdef PBRT_FLOAT_AS_DOUBLE
-	typedef double Float;
+	typedef double Float;		// 64-bit 
 #else
-	typedef float Float;
+	typedef float Float;		// 32-bit
 #endif  // PBRT_FLOAT_AS_DOUBLE
 	class RNG;
 	class ProgressReporter;
@@ -292,6 +296,16 @@ namespace pbrt {
 		return std::pow((value + 0.055f) * 1.f / 1.055f, (Float)2.4f);
 	}
 
+	// Utility Functions
+	// -----------------
+
+	/// <summary>
+	/// Clamps the specified value to lie between low and high.
+	/// </summary>
+	/// <param name="val">The value.</param>
+	/// <param name="low">The low bound.</param>
+	/// <param name="high">The high bound.</param>
+	/// <returns></returns>
 	template <typename T, typename U, typename V>
 	inline T Clamp(T val, U low, V high) {
 		if (val < low)
@@ -302,62 +316,141 @@ namespace pbrt {
 			return val;
 	}
 
+	/// <summary>
+	/// (Modulo) Computes the remainder of a/b.
+	/// Additionally to % it provides the behavior that the moduls of a negative number
+	/// is always positive.
+	/// </summary>
+	/// <param name="a">Value A</param>
+	/// <param name="b">Value B</param>
+	/// <returns>Modulo a/b</returns>
 	template <typename T>
 	inline T Mod(T a, T b) {
 		T result = a - (a / b) * b;
 		return (T)((result < 0) ? result + b : result);
 	}
 
+	/// <summary>
+	/// (Modulo) Computes the remainder of a/b.
+	/// Additionally to % it provides the behavior that the moduls of a negative number
+	/// is always positive. 
+	/// Specialization for Floats.
+	/// </summary>
+	/// <param name="a">(Float) Value A</param>
+	/// <param name="b">(Float) Value B</param>
+	/// <returns>Modulo a/b</returns>
 	template <>
 	inline Float Mod(Float a, Float b) {
 		return std::fmod(a, b);
 	}
 
+	/// <summary>
+	/// Converts the given angle in degrees to radians.
+	/// </summary>
+	/// <param name="deg">The deg.</param>
+	/// <returns></returns>
 	inline Float Radians(Float deg) { return (Pi / 180) * deg; }
 
+	/// <summary>
+	/// Converts the given angle in radians to degrees.
+	/// </summary>
+	/// <param name="deg">The deg.</param>
+	/// <returns>Log2(x) = log x/log 2</returns>
 	inline Float Degrees(Float rad) { return (180 / Pi) * rad; }
 
+	/// <summary>
+	/// Log2(x) = log x/log 2. 
+	/// For floating point numbers.
+	/// </summary>
+	/// <param name="x">The x.</param>
+	/// <returns>Log2(x) = log x/log 2</returns>
 	inline Float Log2(Float x) {
 		const Float invLog2 = 1.442695040888963387004650940071;
 		return std::log(x) * invLog2;
 	}
 
+	/// <summary>
+	/// Log2(x) = log x/log 2
+	/// For integer.
+	/// Counting number of leading zeros up to the first one in the 32-bit binary
+	/// representation and then subtract this value from 31, gives the index of the first bit set.
+	/// This is in turn the integer base-2 logarithm.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns>Log2(x) = log x/log 2</returns>
 	inline int Log2Int(uint32_t v) {
 #if defined(PBRT_IS_MSVC)
 		unsigned long lz = 0;
-		if (_BitScanReverse(&lz, v)) return lz;
+		if (_BitScanReverse(&lz, v)) return lz;	// intrinsics MSVC
 		return 0;
 #else
-		return 31 - __builtin_clz(v);
+		return 31 - __builtin_clz(v);	// intrinsics g++ & clang
 #endif
 	}
 
+	/// <summary>
+	/// Log2(x) = log x/log 2
+	/// For integer.
+	/// Counting number of leading zeros up to the first one in the 32-bit binary
+	/// representation and then subtract this value from 31, gives the index of the first bit set.
+	/// This is in turn the integer base-2 logarithm.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns>Log2(x) = log x/log 2</returns>
 	inline int Log2Int(int32_t v) { return Log2Int((uint32_t)v); }
 
+	/// <summary>
+	/// Log2(x) = log x/log 2
+	/// For integer.
+	/// Counting number of leading zeros up to the first one in the 64-bit binary
+	/// representation and then subtract this value from 63, gives the index of the first bit set.
+	/// This is in turn the integer base-2 logarithm.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns>Log2(x) = log x/log 2</returns>
 	inline int Log2Int(uint64_t v) {
 #if defined(PBRT_IS_MSVC)
 		unsigned long lz = 0;
 #if defined(_WIN64)
-		_BitScanReverse64(&lz, v);
+		_BitScanReverse64(&lz, v);// intrinsics MSVC
 #else
-		if (_BitScanReverse(&lz, v >> 32))
+		if (_BitScanReverse(&lz, v >> 32))// intrinsics MSVC
 			lz += 32;
 		else
-			_BitScanReverse(&lz, v & 0xffffffff);
+			_BitScanReverse(&lz, v & 0xffffffff);// intrinsics MSVC
 #endif // _WIN64
 		return lz;
 #else  // PBRT_IS_MSVC
-		return 63 - __builtin_clzll(v);
+		return 63 - __builtin_clzll(v);	// intrinsics g++ & clang
 #endif
 	}
 
+	/// <summary>
+	/// Log2(x) = log x/log 2
+	/// For integer.
+	/// Counting number of leading zeros up to the first one in the 64-bit binary
+	/// representation and then subtract this value from 63, gives the index of the first bit set.
+	/// This is in turn the integer base-2 logarithm.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns>Log2(x) = log x/log 2</returns>
 	inline int Log2Int(int64_t v) { return Log2Int((uint64_t)v); }
 
+	/// <summary>
+	/// Determines whether a given integer is an exact power of 2.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns>True if integer is an exact power of 2</returns>
 	template <typename T>
 	inline PBRT_CONSTEXPR bool IsPowerOf2(T v) {
 		return v && !(v & (v - 1));
 	}
 
+	/// <summary>
+	/// Rounds an 32bit integer up to the next higher (or equal) power of 2.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns></returns>
 	inline int32_t RoundUpPow2(int32_t v) {
 		v--;
 		v |= v >> 1;
@@ -368,6 +461,11 @@ namespace pbrt {
 		return v + 1;
 	}
 
+	/// <summary>
+	/// Rounds an 64bit integer up to the next higher (or equal) power of 2.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns></returns>
 	inline int64_t RoundUpPow2(int64_t v) {
 		v--;
 		v |= v >> 1;
@@ -379,18 +477,35 @@ namespace pbrt {
 		return v + 1;
 	}
 
+	/// <summary>
+	/// Counts (efficiently) the trailing zeros in the binary representation of a value.
+	/// </summary>
+	/// <param name="v">The v.</param>
+	/// <returns></returns>
 	inline int CountTrailingZeros(uint32_t v) {
 #if defined(PBRT_IS_MSVC)
 		unsigned long index;
-		if (_BitScanForward(&index, v))
+		if (_BitScanForward(&index, v))	// intrinsics MSVC
 			return index;
 		else
 			return 32;
 #else
-		return __builtin_ctz(v);
+		return __builtin_ctz(v);	// intrinsics g++ & clang
 #endif
 	}
-
+	
+	/// <summary>
+	/// Emulates the behavior of std::upper_bound() but uses a function object to get values at various indices 
+	/// instead of requiring access to an actual array.
+	/// This way, it becomes possible to bisect arrays that are procedurally generated, such as those interpolated
+	/// from point samples.
+	/// The implementation here also adds some bounds checking for corner cases (e.g., making sure that a valid interval
+	/// is selected even in the case the predicate evaluates to true or false for all entries), 
+	/// which would normally have to follow a call to std::upper_bound().
+	/// </summary>
+	/// <param name="size">The size.</param>
+	/// <param name="pred">The Predicate.</param>
+	/// <returns></returns>
 	template <typename Predicate>
 	int FindInterval(int size, const Predicate &pred) {
 		int first = 0, len = size;
