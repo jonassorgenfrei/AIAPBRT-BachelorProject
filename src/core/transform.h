@@ -405,14 +405,46 @@ namespace pbrt {
 	}
 	
 	// AnimatedTransform Declarations
+	// implements keyframe transformation interpolation
 	class AnimatedTransform {
 	public:
 		// AnimatedTransform Public Methods
-		AnimatedTransform(const Transform *startTransform, Float startTime,
-			const Transform *endTransform, Float endTime);
-		static void Decompose(const Matrix4x4 &m, Vector3f *T, Quaternion *R,
-			Matrix4x4 *S);
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="AnimatedTransform"/> class.
+		/// </summary>
+		/// <param name="startTransform">The start transformation.</param>
+		/// <param name="startTime">The start time (associated with the start transformation).</param>
+		/// <param name="endTransform">The end transformation.</param>
+		/// <param name="endTime">The end time (associated with the end transformation).</param>
+		AnimatedTransform(const Transform *startTransform,
+							Float startTime,
+							const Transform *endTransform,
+							Float endTime);
+
+		/// <summary>
+		/// Decomposes the given transformation matrices into scaling, rotation and translation components.
+		/// Using the transformation decomposition M = TRS
+		/// </summary>
+		/// <param name="m">The Transformation Matrix</param>
+		/// <param name="T">The output Translation component (Vector3f)</param>
+		/// <param name="R">The output Rotation component(Quaternion)</param>
+		/// <param name="S">The output (generalized) Scale/Stretch component (Matrix4x4)</param>
+		static void Decompose(const Matrix4x4 &m,
+								Vector3f *T,
+								Quaternion *R,
+								Matrix4x4 *S);
+
+		/// <summary>
+		/// Computes the interpolated transformation matrix at a given time.
+		/// The Matrix is found by interpolating the previously extracted translation, rotation and scale
+		/// and then multiplying them together to get a composite matrix that represents the effect of the 
+		/// three transformations together.
+		/// </summary>
+		/// <param name="time">The time.</param>
+		/// <param name="t">The transformation.</param>
 		void Interpolate(Float time, Transform *t) const;
+
 		Ray operator()(const Ray &r) const;
 		RayDifferential operator()(const RayDifferential &r) const;
 		Point3f operator()(Float time, const Point3f &p) const;
@@ -425,13 +457,14 @@ namespace pbrt {
 
 	private:
 		// AnimatedTransform Private Data
-		const Transform *startTransform, *endTransform;
-		const Float startTime, endTime;
+		const Transform *startTransform, *endTransform;	// Start & end Transfomration
+		const Float startTime, endTime; // Start & end Time (associated with the start & end transformation)
 		const bool actuallyAnimated;
-		Vector3f T[2];
-		Quaternion R[2];
-		Matrix4x4 S[2];
+		Vector3f T[2];		// Translate components
+		Quaternion R[2];	// Rotation components
+		Matrix4x4 S[2];		// Scale components
 		bool hasRotation;
+
 		struct DerivativeTerm {
 			DerivativeTerm() {}
 			DerivativeTerm(Float c, Float x, Float y, Float z)
@@ -443,8 +476,7 @@ namespace pbrt {
 		};
 		DerivativeTerm c1[3], c2[3], c3[3], c4[3], c5[3];
 	};
-
-
+	
 }  // namespace pbrt
 
 #endif // PBRT_CORE_TRANSFORM_H

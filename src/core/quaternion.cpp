@@ -84,16 +84,19 @@ namespace pbrt {
 			v.z = q[2];
 		}
 	}
-
 	
 	Quaternion Slerp(Float t, const Quaternion &q1, const Quaternion &q2) {
 		Float cosTheta = Dot(q1, q2);
-		if (cosTheta > .9995f)
+		if (cosTheta > .9995f)	// check if 2 quaternions are nearly parallel
 			return Normalize((1 - t) * q1 + t * q2);
+			// use regular linear interpolation of quaternion components in order to avoid
+			// numerical instability
 		else {
 			Float theta = std::acos(Clamp(cosTheta, -1, 1));
 			Float thetap = theta * t;
+			// find the orthogonal vector with respect to q1
 			Quaternion qperp = Normalize(q2 - q1 * cosTheta);
+			// calculate the quaternion along the animation path
 			return q1 * std::cos(thetap) + qperp * std::sin(thetap);
 		}
 	}

@@ -1,10 +1,10 @@
 #include "tests/gtest/gtest.h"
 #include "pbrt.h"
-#include "geometry.h"
+#include "transform.h"
 
 using namespace pbrt;
 
-TEST(Bounds2, IteratorBasic) {
+/*TEST(Bounds2, IteratorBasic) {
 	Bounds2i b{ {0, 1}, {2, 3} };
 	Point2i e[] = { {0, 1}, {1, 1}, {0, 2}, {1, 2} };
 	int offset = 0;
@@ -13,4 +13,4 @@ TEST(Bounds2, IteratorBasic) {
 		EXPECT_EQ(e[offset], p) << "offset = " << offset;
 		++offset;
 	}
-}
+}*/

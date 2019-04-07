@@ -133,11 +133,18 @@ namespace pbrt {
 	};
 
 	/// <summary>
-	/// Slerps the specified t.
+	/// Interpolates between two quaternions using spherical linear interpolation.
+	/// Gives constant speed motion along great circle arcs on the surface of a sphere and consequently
+	/// has two desirable properties for interpolating rotations:
+	///		-> the interpolated rotation path exhibits torque minimization: the path to get between two rotations
+	///			is the shortest possible path in rotation space.
+	///		-> the interpolation has constant angular velocity: the relationship between change in the animation
+	///			parameter t and the change in the resulting rotation is contant over the course of interpolation
+	///			(in other word, the speed of interpolation is constant across the interpolation range)
 	/// </summary>
-	/// <param name="t">The t.</param>
-	/// <param name="q1">The q1.</param>
-	/// <param name="q2">The q2.</param>
+	/// <param name="t">Parameter value to interpolate between them.</param>
+	/// <param name="q1">Quaternion 1</param>
+	/// <param name="q2">Quaternion 2</param>
 	/// <returns></returns>
 	Quaternion Slerp(Float t, const Quaternion &q1, const Quaternion &q2);
 
