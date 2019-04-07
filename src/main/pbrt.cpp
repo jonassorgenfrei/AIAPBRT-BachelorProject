@@ -26,9 +26,9 @@
  // main/pbrt.cpp*
 
 #include "../core/pbrt.h"
-#include "api.h"
+#include "api.h" // TODO:
 #include "parser.h"
-#include "parallel.h"
+ #include "parallel.h" // TODO:s
 #include <glog/logging.h>
 
 using namespace pbrt;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 	google::InitGoogleLogging(argv[0]);
 	FLAGS_stderrthreshold = 1; // Warning and above.
 
-	Options options;
+	Options options; 
 	std::vector<std::string> filenames;
 
 	// Process command-line arguments
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
 	else {
 		/* Parse scene from input files */
 		for (const std::string &f : filenames)
-			pbrtParseFile(f);
+			 pbrtParseFile(f);
 			//if (!pbrtParseFile(f))
 			//	Error("Couldn't open scene file \"%s\"", f.c_str());
 	}

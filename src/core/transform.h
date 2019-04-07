@@ -33,9 +33,9 @@
 
  // core/transform.h*
 #include "pbrt.h"
-#include "stringprint.h"
+//#include "stringprint.h"
 #include "geometry.h"
-#include "quaternion.h"
+//#include "quaternion.h"
 
 namespace pbrt {
 

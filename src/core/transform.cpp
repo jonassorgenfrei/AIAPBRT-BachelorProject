@@ -25,7 +25,7 @@
 
  // core/transform.cpp*
 #include "transform.h"
-#include "interaction.h"
+//#include "interaction.h"
 
 namespace pbrt {
 	// Matrix4x4 Method Definitions
@@ -94,7 +94,7 @@ namespace pbrt {
 							}
 						}
 						else if (ipiv[k] > 1)
-							Error("Singular matrix in MatrixInvert");
+							 Error("Singular matrix in MatrixInvert");
 					}
 				}
 			}

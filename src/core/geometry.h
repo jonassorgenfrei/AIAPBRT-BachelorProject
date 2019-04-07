@@ -985,7 +985,7 @@ namespace pbrt {
 			Point3f o;				// origin
 			Vector3f d;				// direction
 			mutable Float tMax;		// limits the ray to a segment along its infinite extent
-			FLOAT time;				// time value of the ray, in scenes with animated objects, the rendering system constructs a representation of the scene at the appropriate time for each ray
+			Float time;				// time value of the ray, in scenes with animated objects, the rendering system constructs a representation of the scene at the appropriate time for each ray
 			const Medium *medium;	// record of the medium containing its origin
 	};
 
