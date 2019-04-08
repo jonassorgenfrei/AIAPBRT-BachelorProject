@@ -26,15 +26,15 @@
  // integrators/whitted.cpp*
 #include "whitted.h"
 #include "interaction.h"
-#include "camera.h"
-#include "film.h"
-#include "paramset.h"
+//#include "camera.h"
+//#include "film.h"
+//#include "paramset.h"
 
 namespace pbrt {
 
 	// WhittedIntegrator Method Definitions
 	
-	Spectrum WhittedIntegrator::Li(const RayDifferntial &ray,
+	/*Spectrum WhittedIntegrator::Li(const RayDifferntial &ray,
 									const Scene &scene, 
 									Sampler &sampler, 
 									MemoryArena &arena, 
@@ -117,5 +117,5 @@ namespace pbrt {
 		}
 		return new WhittedIntegrator(maxDepth, camera, sampler, pixelBouns);
 	}
-
+	*/
 } // namespace pbrt

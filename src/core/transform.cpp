@@ -28,6 +28,7 @@
 #include "interaction.h"
 
 namespace pbrt {
+
 	// Matrix4x4 Method Definitions
 	bool SolveLinearSystem2x2(const Float A[2][2], 
 								const Float B[2], 
@@ -41,13 +42,12 @@ namespace pbrt {
 		return true;
 	}
 
-	
 	Matrix4x4::Matrix4x4(Float mat[4][4]) { memcpy(m, mat, 16 * sizeof(Float)); }
 
-	Matrix4x4::Matrix4x4(Float t00, Float t01, Float t02, Float t03, Float t10,
-		Float t11, Float t12, Float t13, Float t20, Float t21,
-		Float t22, Float t23, Float t30, Float t31, Float t32,
-		Float t33) {
+	Matrix4x4::Matrix4x4(	Float t00, Float t01, Float t02, Float t03,
+							Float t10, Float t11, Float t12, Float t13,
+							Float t20, Float t21, Float t22, Float t23,
+							Float t30, Float t31, Float t32, Float t33) {
 		m[0][0] = t00;
 		m[0][1] = t01;
 		m[0][2] = t02;
@@ -67,10 +67,10 @@ namespace pbrt {
 	}
 
 	Matrix4x4 Transpose(const Matrix4x4 &m) {
-		return Matrix4x4(m.m[0][0], m.m[1][0], m.m[2][0], m.m[3][0], m.m[0][1],
-			m.m[1][1], m.m[2][1], m.m[3][1], m.m[0][2], m.m[1][2],
-			m.m[2][2], m.m[3][2], m.m[0][3], m.m[1][3], m.m[2][3],
-			m.m[3][3]);
+		return Matrix4x4(	m.m[0][0], m.m[1][0], m.m[2][0], m.m[3][0],
+							m.m[0][1], m.m[1][1], m.m[2][1], m.m[3][1], 
+							m.m[0][2], m.m[1][2], m.m[2][2], m.m[3][2],
+							m.m[0][3], m.m[1][3], m.m[2][3], m.m[3][3]);
 	}
 
 	Matrix4x4 Inverse(const Matrix4x4 &m) {
@@ -144,7 +144,7 @@ namespace pbrt {
 		Matrix4x4 minv( 1, 0, 0, -delta.x, 
 						0, 1, 0, -delta.y, 
 						0, 0, 1, -delta.z, 
-						0, 0, 0, 1);
+						0, 0, 0,	1);
 		return Transform(m, minv);
 	}
 
@@ -291,91 +291,190 @@ namespace pbrt {
 	}
 
 	Transform Transform::operator*(const Transform &t2) const {
-		return Transform(Matrix4x4::Mul(m, t2.m), 
-						Matrix4x4::Mul(t2.mInv, mInv));
+		return Transform(Matrix4x4::Mul(m, t2.m), Matrix4x4::Mul(t2.mInv, mInv));
 		// the inverse of the resulting matrix is equal to the product of t2 * mInv due to the matrix identity.
 	}
 
 	bool Transform::SwapsHandedness() const {
 		Float det = m.m[0][0] * (m.m[1][1] * m.m[2][2] - m.m[1][2] * m.m[2][1]) -
-			m.m[0][1] * (m.m[1][0] * m.m[2][2] - m.m[1][2] * m.m[2][0]) +
-			m.m[0][2] * (m.m[1][0] * m.m[2][1] - m.m[1][1] * m.m[2][0]);
+					m.m[0][1] * (m.m[1][0] * m.m[2][2] - m.m[1][2] * m.m[2][0]) +
+					m.m[0][2] * (m.m[1][0] * m.m[2][1] - m.m[1][1] * m.m[2][0]);
 		return det < 0;
 	}
+	
+	/*
+	SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
+		SurfaceInteraction ret;
+		// Transform _p_ and _pError_ in _SurfaceInteraction_
+		ret.p = (*this)(si.p, si.pError, &ret.pError);
 
+		// Transform remaining members of _SurfaceInteraction_
+		const Transform &t = *this;
+		ret.n = Normalize(t(si.n));
+		ret.wo = Normalize(t(si.wo));
+		ret.time = si.time;
+		ret.mediumInterface = si.mediumInterface;
+		ret.uv = si.uv;
+		ret.shape = si.shape;
+		ret.dpdu = t(si.dpdu);
+		ret.dpdv = t(si.dpdv);
+		ret.dndu = t(si.dndu);
+		ret.dndv = t(si.dndv);
+		ret.shading.n = Normalize(t(si.shading.n));
+		ret.shading.dpdu = t(si.shading.dpdu);
+		ret.shading.dpdv = t(si.shading.dpdv);
+		ret.shading.dndu = t(si.shading.dndu);
+		ret.shading.dndv = t(si.shading.dndv);
+		ret.dudx = si.dudx;
+		ret.dvdx = si.dvdx;
+		ret.dudy = si.dudy;
+		ret.dvdy = si.dvdy;
+		ret.dpdx = t(si.dpdx);
+		ret.dpdy = t(si.dpdy);
+		ret.bsdf = si.bsdf;
+		ret.bssrdf = si.bssrdf;
+		ret.primitive = si.primitive;
+		//    ret.n = Faceforward(ret.n, ret.shading.n);
+		ret.shading.n = Faceforward(ret.shading.n, ret.n);
+		ret.faceIndex = si.faceIndex;
+		return ret;
+	}
+
+	Transform Orthographic(Float zNear, Float zFar) {
+		return Scale(1, 1, 1 / (zFar - zNear)) * Translate(Vector3f(0, 0, -zNear));
+	}
+
+	Transform Perspective(Float fov, Float n, Float f) {
+		// Perform projective divide for perspective projection
+		Matrix4x4 persp(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, f / (f - n), -f * n / (f - n),
+						0, 0, 1, 0);
+
+		// Scale canonical perspective view to specified field of view
+		Float invTanAng = 1 / std::tan(Radians(fov) / 2);
+		return Scale(invTanAng, invTanAng, 1) * Transform(persp);
+	}
+	*/
 
 	// Interval Definitions
+	// represents intervals of real numbers.
 	class Interval {
 	public:
 		// Interval Public Methods
+
+		// Initialize the interval with a single point on the real number line 
 		Interval(Float v) : low(v), high(v) {}
+
+		// Initialize the interval with two values specify an interval with non-zero width
 		Interval(Float v0, Float v1)
 			: low(std::min(v0, v1)), high(std::max(v0, v1)) {}
+
 		Interval operator+(const Interval &i) const {
 			return Interval(low + i.low, high + i.high);
 		}
+
 		Interval operator-(const Interval &i) const {
+			// note for the first: high value of the 2nd interval is subtracted from the low value of the first!
 			return Interval(low - i.high, high - i.low);
 		}
+
+		/// <summary>
+		/// Multiplying the various possibilities and taking the overall minimum and maximum.
+		/// (Is easier than working through which ones to use and multiplying these)
+		/// </summary>
+		/// <param name="i">The i.</param>
+		/// <returns></returns>
 		Interval operator*(const Interval &i) const {
-			return Interval(std::min(std::min(low * i.low, high * i.low),
-				std::min(low * i.high, high * i.high)),
-				std::max(std::max(low * i.low, high * i.low),
-					std::max(low * i.high, high * i.high)));
+			return Interval(
+								std::min(	std::min(low * i.low, high * i.low),
+											std::min(low * i.high, high * i.high)),
+								std::max(	std::max(low * i.low, high * i.low),
+											std::max(low * i.high, high * i.high))
+						);
 		}
+		// Interval Public Data
 		Float low, high;
 	};
 
+	// Sin Functions for Intervals.
 	inline Interval Sin(const Interval &i) {
-		CHECK_GE(i.low, 0);
+		// Assume that the interval is in [0, 2pi]
+		CHECK_GE(i.low, 0);	
 		CHECK_LE(i.high, 2.0001 * Pi);
 		Float sinLow = std::sin(i.low), sinHigh = std::sin(i.high);
-		if (sinLow > sinHigh) std::swap(sinLow, sinHigh);
-		if (i.low < Pi / 2 && i.high > Pi / 2) sinHigh = 1.;
-		if (i.low < (3.f / 2.f) * Pi && i.high >(3.f / 2.f) * Pi) sinLow = -1.;
+		if (sinLow > sinHigh)
+			std::swap(sinLow, sinHigh);
+		if (i.low < Pi / 2 && i.high > Pi / 2)
+			sinHigh = 1.;
+		if (i.low < (3.f / 2.f) * Pi && i.high >(3.f / 2.f) * Pi)
+			sinLow = -1.;
 		return Interval(sinLow, sinHigh);
 	}
 
+	// Cos Functions for Intervals.
 	inline Interval Cos(const Interval &i) {
+		// Assume that the interval is in [0, 2pi]
 		CHECK_GE(i.low, 0);
 		CHECK_LE(i.high, 2.0001 * Pi);
 		Float cosLow = std::cos(i.low), cosHigh = std::cos(i.high);
-		if (cosLow > cosHigh) std::swap(cosLow, cosHigh);
-		if (i.low < Pi && i.high > Pi) cosLow = -1.;
+		if (cosLow > cosHigh)
+			std::swap(cosLow, cosHigh);
+		if (i.low < Pi && i.high > Pi)
+			cosLow = -1.;
 		return Interval(cosLow, cosHigh);
 	}
 
-	void IntervalFindZeros(Float c1, Float c2, Float c3, Float c4, Float c5,
-		Float theta, Interval tInterval, Float *zeros,
-		int *zeroCount, int depth = 8) {
+	/// <summary>
+	/// Numerically finds the t values of any zeros of Equation over the given Interval
+	/// Up to four are possible.
+	/// Zeros are found over t e [0,1]
+	/// </summary>
+	/// <param name="c1">The c1.</param>
+	/// <param name="c2">The c2.</param>
+	/// <param name="c3">The c3.</param>
+	/// <param name="c4">The c4.</param>
+	/// <param name="c5">The c5.</param>
+	/// <param name="theta">The theta.</param>
+	/// <param name="tInterval">The t interval.</param>
+	/// <param name="zeros">The zeros.</param>
+	/// <param name="zeroCount">The zero count.</param>
+	/// <param name="depth">The depth.</param>
+	void IntervalFindZeros(	Float c1, Float c2, Float c3, Float c4, Float c5,
+							Float theta, Interval tInterval, Float *zeros,
+							int *zeroCount, int depth = 8) {
 		// Evaluate motion derivative in interval form, return if no zeros
+		// compute the interval range over tInterval	
 		Interval range = Interval(c1) +
-			(Interval(c2) + Interval(c3) * tInterval) *
-			Cos(Interval(2 * theta) * tInterval) +
-			(Interval(c4) + Interval(c5) * tInterval) *
-			Sin(Interval(2 * theta) * tInterval);
-		if (range.low > 0. || range.high < 0. || range.low == range.high) return;
+						(Interval(c2) + Interval(c3) * tInterval) *
+							Cos(Interval(2 * theta) * tInterval) +
+						(Interval(c4) + Interval(c5) * tInterval) *
+							Sin(Interval(2 * theta) * tInterval);
+		if (range.low > 0. || range.high < 0. || range.low == range.high)
+			return;	// if the range doesn't span zero, then there are no zeros of the function over 
+					// tInterval and the function can return
 		if (depth > 0) {
 			// Split _tInterval_ and check both resulting intervals
+
 			Float mid = (tInterval.low + tInterval.high) * 0.5f;
+			// recursively checks the two sub-intervals
+			// reducing the size of the interval domain generally
+			// reduces the extent of the interval range, which may allow us to
+			// determine that there are no zeros in one or both of the new intervals.
 			IntervalFindZeros(c1, c2, c3, c4, c5, theta,
-				Interval(tInterval.low, mid), zeros, zeroCount,
-				depth - 1);
+				Interval(tInterval.low, mid), zeros, zeroCount, depth - 1);
 			IntervalFindZeros(c1, c2, c3, c4, c5, theta,
-				Interval(mid, tInterval.high), zeros, zeroCount,
-				depth - 1);
+				Interval(mid, tInterval.high), zeros, zeroCount, depth - 1);
 		}
 		else {
-			// Use Newton's method to refine zero
-			Float tNewton = (tInterval.low + tInterval.high) * 0.5f;
-			for (int i = 0; i < 4; ++i) {
-				Float fNewton =
-					c1 + (c2 + c3 * tNewton) * std::cos(2.f * theta * tNewton) +
-					(c4 + c5 * tNewton) * std::sin(2.f * theta * tNewton);
+			// Use Newton's method to refine zero once we have a narrow interval (where the interval value of the motion derivative function spans zero)
+			Float tNewton = (tInterval.low + tInterval.high) * 0.5f;	// starting at the midpoint
+			for (int i = 0; i < 4; ++i) {	// 4 iterations of Newton's method to find the zero
+				Float fNewton =	c1 + 
+								(c2 + c3 * tNewton) * std::cos(2.f * theta * tNewton) +
+								(c4 + c5 * tNewton) * std::sin(2.f * theta * tNewton);
 				Float fPrimeNewton = (c3 + 2 * (c4 + c5 * tNewton) * theta) *
-					std::cos(2.f * tNewton * theta) +
-					(c5 - 2 * (c2 + c3 * tNewton) * theta) *
-					std::sin(2.f * tNewton * theta);
+										std::cos(2.f * tNewton * theta) +
+									(c5 - 2 * (c2 + c3 * tNewton) * theta) *
+										std::sin(2.f * tNewton * theta);
 				if (fNewton == 0 || fPrimeNewton == 0) break;
 				tNewton = tNewton - fNewton / fPrimeNewton;
 			}
@@ -384,10 +483,13 @@ namespace pbrt {
 				zeros[*zeroCount] = tNewton;
 				(*zeroCount)++;
 			}
+			// Note that if there were multiple zeros of the function in tInterval when Newton’s method 
+			// sis used, then we will only find one of them here. However, because the interval is quite
+			// small at this point, the impact of this error should be minimal. In any case, we haven’t found
+			// this issue to be a problem in practice. 
 		}
 	}
-
-
+	
 	// AnimatedTransform Method Definitions
 	AnimatedTransform::AnimatedTransform(	const Transform *startTransform,
 											Float startTime,
@@ -406,6 +508,7 @@ namespace pbrt {
 		if (Dot(R[0], R[1]) < 0) R[1] = -R[1];
 		hasRotation = Dot(R[0], R[1]) < 0.9995f;
 		// Compute terms of motion derivative function
+		// Initializes the derivation terms via automatically generated code
 		if (hasRotation) {
 			Float cosTheta = Dot(R[0], R[1]);
 			Float theta = std::acos(Clamp(cosTheta, -1, 1));
@@ -1097,7 +1200,7 @@ namespace pbrt {
 	}
 
 	void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
-		Quaternion *Rquat, Matrix4x4 *S) {
+										Quaternion *Rquat, Matrix4x4 *S) {
 		// Extract translation _T_ from transformation matrix
 		T->x = m.m[0][3];
 		T->y = m.m[1][3];
@@ -1119,8 +1222,7 @@ namespace pbrt {
 		int count = 0;
 		Matrix4x4 R = M;
 		do {
-			// Compute next matrix _Rnext_ in series
-			
+			// Compute next matrix _Rnext_ in series		
 			Matrix4x4 Rnext;
 			Matrix4x4 Rit = Inverse(Transpose(R));
 			for (int i = 0; i < 4; ++i)
@@ -1130,9 +1232,9 @@ namespace pbrt {
 			// Compute norm of difference between _R_ and _Rnext_
 			norm = 0;
 			for (int i = 0; i < 3; ++i) {
-				Float n = std::abs(R.m[i][0] - Rnext.m[i][0]) +
-					std::abs(R.m[i][1] - Rnext.m[i][1]) +
-					std::abs(R.m[i][2] - Rnext.m[i][2]);
+				Float n =	std::abs(R.m[i][0] - Rnext.m[i][0]) +
+							std::abs(R.m[i][1] - Rnext.m[i][1]) +
+							std::abs(R.m[i][2] - Rnext.m[i][2]);
 				norm = std::max(norm, n);
 			}
 			R = Rnext;
@@ -1180,7 +1282,7 @@ namespace pbrt {
 		*t = Translate(trans) * rotate.ToTransform() * Transform(scale);
 	}
 
-	// These transforms are more efficent than calling Interpolate and then using the actual animation
+	// These transforms are more efficient than calling Interpolate and then using the actual animation
 	// since a copy of the transformation matrix doesn't need to be made in that case
 	Ray AnimatedTransform::operator()(const Ray &r) const {
 		if (!actuallyAnimated || r.time <= startTime)
@@ -1230,12 +1332,16 @@ namespace pbrt {
 
 	Bounds3f AnimatedTransform::MotionBounds(const Bounds3f &b) const {
 		if (!actuallyAnimated) return (*startTransform)(b);
+		// if there is no Rotation the Bound can be computed by calculating the 
+		// union of the two boxes.
 		if (hasRotation == false)
 			return Union((*startTransform)(b), (*endTransform)(b));
 		// Return motion bounds accounting for animated rotation
 		Bounds3f bounds;
+		// computing the motion of the eight corners of the bounding box individually and finding
+		// the union of those bounds
 		for (int corner = 0; corner < 8; ++corner)
-			bounds = Union(bounds, BoundPointMotion(b.Corner(corner)));
+			bounds = Union(bounds, BoundPointMotion(b.Corner(corner)));	// calculate Motion extrema points
 		return bounds;
 	}
 
@@ -1248,9 +1354,9 @@ namespace pbrt {
 			// Find any motion derivative zeros for the component _c_
 			Float zeros[8];
 			int nZeros = 0;
-			IntervalFindZeros(c1[c].Eval(p), c2[c].Eval(p), c3[c].Eval(p),
-				c4[c].Eval(p), c5[c].Eval(p), theta, Interval(0., 1.),
-				zeros, &nZeros);
+			IntervalFindZeros(	c1[c].Eval(p), c2[c].Eval(p), c3[c].Eval(p),
+								c4[c].Eval(p), c5[c].Eval(p), theta, Interval(0., 1.),
+								zeros, &nZeros);
 			CHECK_LE(nZeros, sizeof(zeros) / sizeof(zeros[0]));
 
 			// Expand bounding box for any motion derivative zeros found

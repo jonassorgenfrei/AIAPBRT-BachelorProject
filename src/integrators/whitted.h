@@ -44,7 +44,7 @@
 #include "scene.h"
 
 namespace pbrt {
-	// WhittedIntegrator Declarations
+	/*// WhittedIntegrator Declarations
 	class WhittedIntegrator : public SamplerIntegrator {
 	public:
 		// WhittedIntegrator Public Methods
@@ -68,7 +68,7 @@ namespace pbrt {
 		const ParamSet &params,
 		std::shared_ptr<Sampler> sampler,
 		std::shared_ptr<const Camera> camera);
-
+		*/
 }  // namespace pbrt
 
 #endif // PBRT_INTEGRATORS_WHITTED_H

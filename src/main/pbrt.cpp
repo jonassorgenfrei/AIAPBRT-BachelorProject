@@ -181,21 +181,21 @@ int main(int argc, char *argv[]) {
 		fflush(stdout);
 	}
 
-	pbrtInit(options);
+	//pbrtInit(options);
 
 	// Process scene description
 	if (filenames.empty()) {
 		// Parse Scene from standard input
-		pbrtParseFile("-");
+		//pbrtParseFile("-");
 	}
 	else {
 		/* Parse scene from input files */
-		for (const std::string &f : filenames)
-			 pbrtParseFile(f);
+		for (const std::string &f : filenames);
+			 //pbrtParseFile(f);
 			//if (!pbrtParseFile(f))
 			//	Error("Couldn't open scene file \"%s\"", f.c_str());
 	}
 
-	pbrtCleanup();
+	//pbrtCleanup();
 	return 0;
 }

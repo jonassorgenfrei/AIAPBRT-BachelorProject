@@ -122,8 +122,7 @@ namespace pbrt {
 		Quaternion(const Transform &t);
 
 		friend std::ostream &operator<<(std::ostream &os, const Quaternion &q) {
-			os << StringPrintf("[ %f, %f, %f, %f ]", q.v.x, q.v.y, q.v.z,
-				q.w);
+			os << StringPrintf("[ %f, %f, %f, %f ]", q.v.x, q.v.y, q.v.z, q.w);
 			return os;
 		}
 

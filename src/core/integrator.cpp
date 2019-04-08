@@ -27,13 +27,13 @@
 #include "integrator.h"
 #include "scene.h"
 #include "interaction.h"
-#include "sampling.h"
+//#include "sampling.h"
 #include "parallel.h"
-#include "film.h"
-#include "sampler.h"
+//#include "film.h"
+//#include "sampler.h"
 #include "integrator.h"
 #include "progressreporter.h"
-#include "camera.h"
+//#include "camera.h"
 #include "stats.h"
 
 namespace pbrt {
@@ -43,7 +43,7 @@ namespace pbrt {
 	// Integrator Method Definitions
 	Integrator::~Integrator() {}
 
-	Spectrum SamplerIntegrator::SpecularReflect(const RayDifferential &ray, 
+	/*Spectrum SamplerIntegrator::SpecularReflect(const RayDifferential &ray, 
 												const SurfaceInteraction & isect, 
 												const Scene & scene, 
 												Sampler & sampler, 
@@ -85,9 +85,9 @@ namespace pbrt {
 			return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
 		} else 
 			return Spectrum(0.f);
-	}
+	}*/
 
-	Spectrum SamplerIntegrator::SpecularTransmit(const RayDifferential & ray, 
+	/*Spectrum SamplerIntegrator::SpecularTransmit(const RayDifferential & ray, 
 												const SurfaceInteraction & isect, 
 												const Scene & scene, 
 												Sampler & sampler, 
@@ -126,7 +126,7 @@ namespace pbrt {
 					ns = -ns;
 					dndx = -dndx;
 					dndy = -dndy;
-				}
+				}*/
 				/*
 					Notes on the derivation :
 					-	pbrt computes the refracted ray as : \wi = -\eta \omega_o + [\eta(\wo \cdot \N) - \cos \theta_t] \N
@@ -149,7 +149,7 @@ namespace pbrt {
 					-	Plugging it in, we have d\mu / dx =
 						\eta d(\wo \cdot N) / dx - (\eta ^ 2 (\wo \cdot N) d / dx(\wo \cdot N)) / (-\wi \cdot N).
 				*/
-				Vector3f dwodx = -ray.rxDirection - wo,
+				/*Vector3f dwodx = -ray.rxDirection - wo,
 					dwody = -ray.ryDirection - wo;
 				Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
 				Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
@@ -166,10 +166,10 @@ namespace pbrt {
 			L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
 		} 
 		return L;
-	}
+	}*/
 
 
-
+/*
 	void SamplerIntegrator::Render(const Scene &scene) {
 		Preprocess(scene, *sampler);
 		// Render image tiles in parallel
@@ -284,6 +284,6 @@ namespace pbrt {
 			// Save final image after rendering
 			camera->film->WriteImage();
 	}
-	
+	*/
 	
 } // namespace pbrt

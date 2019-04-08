@@ -37,19 +37,21 @@
 //#include "primitive.h"
 //#include "light.h"
 
+namespace pbrt {
+
 /// <summary>
 /// Scene Declarations
 /// </summary>
 class Scene {
 public:
 	// Scene Public Methods
-	
+	Scene() {};	// TODO DELTE DEFAULT
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Scene"/> class.
 	/// </summary>
 	/// <param name="aggregate">The aggregate.</param>
 	/// <param name="lights">The lights.</param>
-	Scene(std::shared_ptr<Primitive> aggregate,
+/*	Scene(std::shared_ptr<Primitive> aggregate,
 		const std::vector<std::shared_ptr<Light>> &lights)
 		: lights(lights), aggregate(aggregate) {
 		// Scene Constructor Implementation
@@ -107,12 +109,12 @@ public:
 	std::vector<std::shared_ptr<Light>> lights;
 	// Store infinite light sources separately for cases where we only want
 	// to loop over them.
-	std::vector<std::shared_ptr<Light>> infiniteLights;
+	std::vector<std::shared_ptr<Light>> infiniteLights;*/
 
-private:
+/*private:
 	// Scene Private Data
 	std::shared_ptr<Primitive> aggregate;
-	Bounds3f WorldBound;
+	Bounds3f WorldBound;*/
 };
 
 }  // namespace pbrt

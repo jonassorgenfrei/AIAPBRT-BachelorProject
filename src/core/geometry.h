@@ -270,7 +270,7 @@ namespace pbrt {
 			Float inv = (Float)1 / f;
 			x *= inv;
 			y *= inv;
-			z *= inv;s
+			z *= inv;
 			return *this;
 		}
 

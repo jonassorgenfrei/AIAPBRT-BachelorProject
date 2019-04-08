@@ -33,7 +33,7 @@
 
  // core/integrator.h*
 #include "pbrt.h"
-// #include "primitive.h"
+//#include "primitive.h"
 //#include "spectrum.h"
 //#include "light.h"
 //#include "reflection.h"
@@ -67,7 +67,7 @@ public:
 	virtual void Render(const Scene &scene) = 0;
 };
 
-Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
+/*Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
 	MemoryArena &arena, Sampler &sampler,
 	const std::vector<int> &nLightSamples,
 	bool handleMedia = false);
@@ -85,7 +85,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
 
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 	const Scene &scene);
-
+	*/
 // SamplerIntegrator Declarations
 
 /// <summary>
@@ -95,14 +95,14 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 class SamplerIntegrator : public Integrator {
 public:
 	// SamplerIntegrator Public Methods
-
+	SamplerIntegrator() {};
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SamplerIntegrator"/> class.
 	/// </summary>
 	/// <param name="camera">The camera.</param>
 	/// <param name="sampler">The sampler.</param>
 	/// <param name="pixelBounds">The pixel bounds.</param>
-	SamplerIntegrator(std::shared_ptr<const Camera> camera,
+	/*SamplerIntegrator(std::shared_ptr<const Camera> camera,
 		std::shared_ptr<Sampler> sampler,
 		const Bounds2i &pixelBounds)
 		: camera(camera), sampler(sampler), pixelBounds(pixelBounds) {}
@@ -175,16 +175,16 @@ public:
 								const Scene &scene,
 								Sampler &sampler,
 								Memory &arena,
-								int depht) const;
+								int depht) const;*/
 
-protected:
+/*protected:
 	// SamplerIntegrator Protected Data
 	std::shared_ptr<const Camera> camera;
 
 private:
 	// SamplerIntegrator Private Data
 	std::shared_ptr<Sampler> sampler;
-	const Bounds2i pixelBounds;
+	const Bounds2i pixelBounds;*/
 };
 
 }  // namespace pbrt
