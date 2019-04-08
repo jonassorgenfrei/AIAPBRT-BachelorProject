@@ -286,7 +286,7 @@ SET ( PBRT_CORE_SOURCE
   src/core/geometry.cpp
 #  src/core/imageio.cpp
   src/core/integrator.cpp
-#  src/core/interaction.cpp
+  src/core/interaction.cpp
 #  src/core/interpolation.cpp
 #  src/core/light.cpp
 #  src/core/lightdistrib.cpp
