@@ -286,6 +286,12 @@ namespace pbrt {
 			/// </returns>
 			bool SwapsHandedness() const;
 
+			/// <summary>
+			/// Transforms Surface Interactions.
+			/// Most members are directly transformed or copied.
+			/// </summary>
+			/// <param name="si">The Surface Interaction.</param>
+			/// <returns>Transformed Surface Interaction.</returns>
 			SurfaceInteraction operator()(const SurfaceInteraction &si) const;
 			template <typename T>
 			inline Point3<T> operator()(const Point3<T> &pt,

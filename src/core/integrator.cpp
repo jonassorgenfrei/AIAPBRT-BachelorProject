@@ -38,8 +38,7 @@
 
 namespace pbrt {
 	STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
-
-
+	
 	// Integrator Method Definitions
 	Integrator::~Integrator() {}
 

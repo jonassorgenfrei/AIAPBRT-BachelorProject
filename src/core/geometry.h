@@ -907,10 +907,30 @@ namespace pbrt {
 			return Bounds3<U>((Point3<U>)pMin, (Point3<U>)pMax);
 		}
 
-		bool IntersectP(const Ray &ray, Float *hitt0 = nullptr,
-			Float *hitt1 = nullptr) const;
-		inline bool IntersectP(const Ray &ray, const Vector3f &invDir,
-			const int dirIsNeg[3]) const;
+		/// <summary>
+		/// Checks for a ray-box intersection and returns the two parametric t values of the intersection if any.
+		/// </summary>
+		/// <param name="ray">The ray.</param>
+		/// <param name="hitt0">The hitt0.</param>
+		/// <param name="hitt1">The hitt1.</param>
+		/// <returns>returns true if the intersections's parametric range is returned in the optional arguments hitt 0 and
+		//  hitt1.</returns>
+		bool IntersectP(const Ray &ray,
+						Float *hitt0 = nullptr,
+						Float *hitt1 = nullptr) const;
+
+		/// <summary>
+		/// Specialized method that takes the reciprocal of the ray's direction as an additional parameter, so that 
+		/// the three reciprocals don't need to be computed each time IntersectP() is called
+		/// </summary>
+		/// <param name="ray">The ray.</param>
+		/// <param name="invDir">Precomputed value, indicates whether each direction component is negative (avoids comparisons of the computed tNear and tFar values)</param>
+		/// <param name="dirIsNeg">Precomputed value, indicates whether each direction component is negative (avoids comparisons of the computed tNear and tFar values)</param>
+		/// <returns>Returns true if the ray segment is entirely inside the bounding box, even if the intersections are not within the ray's (0, tMax) range</returns>
+		inline bool IntersectP(const Ray &ray,
+								const Vector3f &invDir,
+								const int dirIsNeg[3]) const;
+
 		friend std::ostream &operator<<(std::ostream &os, const Bounds3<T> &b) {
 			os << "[ " << b.pMin << " - " << b.pMax << " ]";
 			return os;
@@ -1572,19 +1592,21 @@ namespace pbrt {
 	inline bool Bounds3<T>::IntersectP(const Ray &ray,
 										Float *hitt0,
 										Float *hitt1) const {
-		Float t0 = 0, t1 = ray.tMax;
-		for (int i = 0; i < 3; ++i) {
+		Float t0 = 0, t1 = ray.tMax; // (0, Ray::tMax) range others are ignored
+		for (int i = 0; i < 3; ++i) { // three slabs of the bounding box
 			// Update interval for _i_th bounding box slab
-			Float invRayDir = 1 / ray.d[i];
-			Float tNear = (pMin[i] - ray.o[i]) * invRayDir;
-			Float tFar = (pMax[i] - ray.o[i]) * invRayDir;
+			Float invRayDir = 1 / ray.d[i];		// computing the reciprocal of the corresponding component of the ray direction
+			Float tNear = (pMin[i] - ray.o[i]) * invRayDir;	// compute t values of slab interscetion
+			Float tFar = (pMax[i] - ray.o[i]) * invRayDir;	// compute t values of slab interscetion
 
 			// Update parametric interval from slab intersection $t$ values
-			if (tNear > tFar) std::swap(tNear, tFar);
+			if (tNear > tFar) std::swap(tNear, tFar); // reorder so that tNear holds the closer intersection and tFar the farther one
 
 			// Update _tFar_ to ensure robust ray--bounds intersection
+			// in case where the ray origin is in the plane of one of the bounding box slabs and the ray lies in the plane of the slab it is
+			// possible that tNear or tFar will be computed by an expression of the form 0/0 (NaN)
 			tFar *= 1 + 2 * gamma(3);
-			t0 = tNear > t0 ? tNear : t0;
+			t0 = tNear > t0 ? tNear : t0;	// avoid NAN on t0 and t1
 			t1 = tFar < t1 ? tFar : t1;
 			if (t0 > t1) return false;
 		}
@@ -1596,8 +1618,13 @@ namespace pbrt {
 	template <typename T>
 	inline bool Bounds3<T>::IntersectP(const Ray &ray, const Vector3f &invDir,
 										const int dirIsNeg[3]) const {
+		// provides a 15% performance improvement in overall rendering time compared to using the other variant
 		const Bounds3f &bounds = *this;
 		// Check for ray intersection against $x$ and $y$ slabs
+		// if the ray dir vector is negative, the near parametric intersection will be found with the slab
+		// with the larger of the two bounding values
+		// the far intersection will be found with the slab with the smaller of them
+		// ==> directly compute the near and far parametric values in each direction
 		Float tMin = (bounds[dirIsNeg[0]].x - ray.o.x) * invDir.x;
 		Float tMax = (bounds[1 - dirIsNeg[0]].x - ray.o.x) * invDir.x;
 		Float tyMin = (bounds[dirIsNeg[1]].y - ray.o.y) * invDir.y;

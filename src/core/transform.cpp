@@ -302,11 +302,10 @@ namespace pbrt {
 		return det < 0;
 	}
 	
-	/*
 	SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
 		SurfaceInteraction ret;
 		// Transform _p_ and _pError_ in _SurfaceInteraction_
-		ret.p = (*this)(si.p, si.pError, &ret.pError);
+		ret.p = (*this)(si.p, si.pError, &ret.pError);	// special case for bounding floating point error
 
 		// Transform remaining members of _SurfaceInteraction_
 		const Transform &t = *this;
@@ -339,7 +338,7 @@ namespace pbrt {
 		ret.faceIndex = si.faceIndex;
 		return ret;
 	}
-
+	/*
 	Transform Orthographic(Float zNear, Float zFar) {
 		return Scale(1, 1, 1 / (zFar - zNear)) * Translate(Vector3f(0, 0, -zNear));
 	}
