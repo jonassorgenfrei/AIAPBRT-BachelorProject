@@ -1,0 +1,129 @@
+/*
+	pbrt source code is Copyright(c) 1998-2016
+						Matt Pharr, Greg Humphreys, and Wenzel Jakob.
+	This file is part of pbrt.
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are
+	met:
+	- Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	- Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+	IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+	TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+	PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+	HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+	SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+	DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#if defined(_MSC_VER)
+#define NOMINMAX
+#pragma once
+#endif
+
+#ifndef PBRT_SHAPES_SPHERE_H
+#define PBRT_SHAPES_SPHERE_H
+
+ // shapes/sphere.h*
+#include "shape.h"
+
+namespace pbrt {
+
+	// Sphere Declarations
+	class Sphere : public Shape { // implements the shape class
+	public:
+		// Sphere Public Methods
+		/// <summary>
+		/// Initializes a new instance of the <see cref="Sphere"/> class.
+		/// </summary>
+		/// <param name="ObjectToWorld">The object to world transformation</param>
+		/// <param name="WorldToObject">The world to object transformation (reverse object to world transformation).</param>
+		/// <param name="reverseOrientation">if set to <c>true</c> [reverse orientation].</param>
+		/// <param name="radius">The radius of the sphere. Can have an arbitrary positive value.</param>
+		/// <param name="zMin">The z minimum of the sphere's extent, the parts below this plane are cut off.</param>
+		/// <param name="zMax">The z maximum of the sphere's extent, the parts above this plane are cut off.</param>
+		/// <param name="phiMax">The phi maximum. The sphere sweeps out phi  values from 0 to the given phiMax such that the section of the sphere with spherical phi values above phiMax is removed.</param>
+		Sphere(	const Transform *ObjectToWorld,
+				const Transform *WorldToObject,
+				bool reverseOrientation,
+				Float radius,
+				Float zMin,
+				Float zMax,
+				Float phiMax)
+			: Shape(ObjectToWorld, WorldToObject, reverseOrientation),
+			radius(radius),
+			zMin(Clamp(std::min(zMin, zMax), -radius, radius)),
+			zMax(Clamp(std::max(zMin, zMax), -radius, radius)),
+			thetaMin(std::acos(Clamp(std::min(zMin, zMax) / radius, -1, 1))),
+			thetaMax(std::acos(Clamp(std::max(zMin, zMax) / radius, -1, 1))),
+			phiMax(Radians(Clamp(phiMax, 0, 360))) {}
+
+		/// <summary>
+		/// Returns an (axis-aligned) bounding box in the shape's object space
+		/// </summary>
+		/// <returns>
+		/// Returns an (axis-aligned) bounding box in the shape's object space
+		/// </returns>
+		Bounds3f ObjectBound() const;
+
+		/// <summary>
+		/// Tests for a ray-sphere intersection.
+		/// Tests are in Model space (sphere centered at the origin).
+		/// </summary>
+		/// <param name="r">The specific ray.</param>
+		/// <param name="tHit">The t hit.</param>
+		/// <param name="isect">The SurfaceInteraction structure</param>
+		/// <param name="testAlphaTexture">if set to <c>true</c> [test alpha texture].</param>
+		/// <returns></returns>
+		bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+			bool testAlphaTexture) const;
+		
+		/// <summary>
+		/// Predicate function that determines whether or not an intersection occurs,
+		/// without returning any details about the intersection itself.
+		/// Almost identical to the Sphere::Intersect() method, without initializing the
+		/// SurfaceInteraction structure
+		/// </summary>
+		/// <param name="ray">The ray.</param>
+		/// <param name="testAlphaTexture">if set to <c>true</c> [test alpha texture].</param>
+		/// <returns></returns>
+		bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
+		
+		/// <summary>
+		/// Returns the area of the surface. (e.g. to use as area lights)
+		/// </summary>
+		/// <returns></returns>
+		Float Area() const;
+		
+		Interaction Sample(const Point2f &u, Float *pdf) const;
+		
+		Interaction Sample(	const Interaction &ref,
+							const Point2f &u,
+							Float *pdf) const;
+		
+		Float Pdf(const Interaction &ref, const Vector3f &wi) const;
+		
+		Float SolidAngle(const Point3f &p, int nSamples) const;
+
+	private:
+		// Sphere Private Data
+		const Float radius;
+		const Float zMin, zMax;
+		const Float thetaMin, thetaMax, phiMax;
+	};
+
+	std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
+		const Transform *w2o,
+		bool reverseOrientation,
+		const ParamSet &params);
+
+}  // namespace pbrt
+
+#endif // PBRT_SHAPES_SPHERE_H
