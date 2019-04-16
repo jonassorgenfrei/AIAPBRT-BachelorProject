@@ -188,6 +188,8 @@ namespace pbrt {
 		cpObj[3] = BlossomBezier(common->cpObj, uMax, uMax, uMax);
 
 		// Project curve control points to plane perpendicular to ray
+		// so that the ray's origin is at the origin of the coordinate system and the ray's
+		// direction is aligned to be along +z axis.
 
 			// Be careful to set the "up" direction passed to LookAt() to equal the
 			// vector from the first to the last control points.  In turn, this
@@ -206,17 +208,19 @@ namespace pbrt {
 				Vector3f dy;
 				CoordinateSystem(ray.d, &dx, &dy);
 			}
-
-			Transform objectToRay = LookAt(ray.o, ray.o + ray.d, dx);
-			Point3f cp[4] = { objectToRay(cpObj[0]), objectToRay(cpObj[1]),
-							 objectToRay(cpObj[2]), objectToRay(cpObj[3]) };
+			// generate an explicit representation of the transformation
+			Transform objectToRay = LookAt(	ray.o,			// ray's origin
+											ray.o + ray.d,	// point offset from the origin along the ray's direction
+											dx);			// arbitrary direction orthogonal to the direction
+			Point3f cp[4] = {	objectToRay(cpObj[0]), objectToRay(cpObj[1]),
+								objectToRay(cpObj[2]), objectToRay(cpObj[3]) };		// transform control points to the appropriate coordinate system
 
 			// Before going any further, see if the ray's bounding box intersects
 			// the curve's bounding box. We start with the y dimension, since the y
 			// extent is generally the smallest (and is often tiny) due to our
-			// careful orientation of the ray coordinate ysstem above.
-			Float maxWidth = std::max(Lerp(uMin, common->width[0], common->width[1]),
-				Lerp(uMax, common->width[0], common->width[1]));
+			// careful orientation of the ray coordinate system above.
+			Float maxWidth = std::max(	Lerp(uMin, common->width[0], common->width[1]),
+										Lerp(uMax, common->width[0], common->width[1]));
 			if (std::max(std::max(cp[0].y, cp[1].y), std::max(cp[2].y, cp[3].y)) +
 				0.5f * maxWidth < 0 ||
 				std::min(std::min(cp[0].y, cp[1].y), std::min(cp[2].y, cp[3].y)) -
@@ -240,13 +244,16 @@ namespace pbrt {
 				return false;
 
 		// Compute refinement depth for curve, _maxDepth_
+		// compute maximum number of time to subdivide the curve
 		Float L0 = 0;
 		for (int i = 0; i < 2; ++i)
-			L0 = std::max(
-				L0, std::max(
-					std::max(std::abs(cp[i].x - 2 * cp[i + 1].x + cp[i + 2].x),
-						std::abs(cp[i].y - 2 * cp[i + 1].y + cp[i + 2].y)),
-					std::abs(cp[i].z - 2 * cp[i + 1].z + cp[i + 2].z)));
+			L0 = std::max(L0,	std::max(
+									std::max(	std::abs(cp[i].x - 2 * cp[i + 1].x + cp[i + 2].x),
+												std::abs(cp[i].y - 2 * cp[i + 1].y + cp[i + 2].y)
+											),
+									std::abs(cp[i].z - 2 * cp[i + 1].z + cp[i + 2].z)
+								)
+						);
 
 		Float eps =
 			std::max(common->width[0], common->width[1]) * .05f;  // width / 20
@@ -260,14 +267,15 @@ namespace pbrt {
 		};
 		// Compute log base 4 by dividing log2 in half.
 		int r0 = Log2(1.41421356237f * 6.f * L0 / (8.f * eps)) / 2;
-		int maxDepth = Clamp(r0, 0, 10);
+		int maxDepth = Clamp(r0, 0, 10);	// bounded maximum distance from the eventual linearized curve at the finest refinement level (is less than a small fixed distance)
 		ReportValue(refinementLevel, maxDepth);
 
 		return recursiveIntersect(ray, tHit, isect, cp, Inverse(objectToRay), uMin,
 									uMax, maxDepth);
 	}
 
-	bool Curve::recursiveIntersect(	const Ray & ray, 
+	
+	bool Curve::recursiveIntersect(const Ray& ray,
 									Float * tHit,
 									SurfaceInteraction * isect, 
 									const Point3f cp[4],
@@ -287,7 +295,7 @@ namespace pbrt {
 			// intersection with it.
 			bool hit = false;
 			Float u[3] = { u0, (u0 + u1) / 2.f, u1 };
-			// Pointer to the 4 control poitns for the current segment.
+			// Pointer to the 4 control points for the current segment.
 			const Point3f* cps = cpSplit;
 			for (int seg = 0; seg < 2; ++seg, cps += 3) {
 				Float maxWidth =
@@ -423,10 +431,12 @@ namespace pbrt {
 		cpObj[1] = BlossomBezier(common->cpObj, uMin, uMin, uMax);
 		cpObj[2] = BlossomBezier(common->cpObj, uMin, uMax, uMax);
 		cpObj[3] = BlossomBezier(common->cpObj, uMax, uMax, uMax);
+		// approximates the curve length by the length of its control hull
 		Float width0 = Lerp(uMin, common->width[0], common->width[1]);
 		Float width1 = Lerp(uMax, common->width[0], common->width[1]);
 		Float avgWidth = (width0 + width1) * 0.5f;
 		Float approxLength = 0.f;
+		// multiply the length by the average curve width over its extent to approximate the overall surface area
 		for (int i = 0; i < 3; ++i)
 			approxLength += Distance(cpObj[i], cpObj[i + 1]);
 		return approxLength * avgWidth;
@@ -438,10 +448,10 @@ namespace pbrt {
 		return Interaction();
 	}
 
-	std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform * o2w,
-														const Transform * w2o,
-														bool reverseOrientation,
-														const ParamSet & params) {
+	std::vector<std::shared_ptr<Shape>> CreateCurveShape(	const Transform * o2w,
+															const Transform * w2o,
+															bool reverseOrientation,
+															const ParamSet & params) {
 		Float width = params.FindOneFloat("width", 1.f);
 		Float width0 = params.FindOneFloat("width0", width);
 		Float width1 = params.FindOneFloat("width1", width);

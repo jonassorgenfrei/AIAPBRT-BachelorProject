@@ -108,6 +108,18 @@ namespace pbrt {
 
 	private:
 		// Curve Private Methods
+		/// <summary>
+		/// Tests whether the given ray intersects the given curve segment over the given parameter  [u0, u1]
+		/// </summary>
+		/// <param name="r">The r.</param>
+		/// <param name="tHit">The t hit.</param>
+		/// <param name="isect">The isect.</param>
+		/// <param name="cp">The cp.</param>
+		/// <param name="rayToObject">The ray to object.</param>
+		/// <param name="u0">The u0.</param>
+		/// <param name="u1">The u1.</param>
+		/// <param name="depth">The depth.</param>
+		/// <returns></returns>
 		bool recursiveIntersect(const Ray& r,
 								Float* tHit,
 								SurfaceInteraction* isect,
