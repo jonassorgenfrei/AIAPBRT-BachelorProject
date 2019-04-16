@@ -89,7 +89,15 @@ namespace pbrt {
 		
 	public:
 		// Triangle Public Methods
-		Triangle(	const Transform* ObjectToWorld,
+		/// <summary>
+		/// Initializes a new instance of the <see cref="Triangle"/> class.
+		/// </summary>
+		/// <param name="ObjectToWorld">The object to world.</param>
+		/// <param name="WorldToObject">The world to object.</param>
+		/// <param name="reverseOrientation">if set to <c>true</c> [reverse orientation].</param>
+		/// <param name="mesh">The mesh.</param>
+		/// <param name="triNumber">The tri number.</param>
+		Triangle(const Transform* ObjectToWorld,
 					const Transform* WorldToObject,
 					bool reverseOrientation,
 					const std::shared_ptr<TriangleMesh>& mesh,
@@ -99,11 +107,38 @@ namespace pbrt {
 			triMeshBytes += sizeof(*this);
 			faceIndex = mesh->faceIndices.size() ? mesh->faceIndices[triNumber] : 0;
 		}
+
 		Bounds3f ObjectBound() const;
+
 		Bounds3f WorldBound() const;
-		bool Intersect(const Ray& ray, Float* tHit, SurfaceInteraction* isect,
-			bool testAlphaTexture = true) const;
-		bool IntersectP(const Ray& ray, bool testAlphaTexture = true) const;
+
+		/// <summary>
+		/// Returns geometric information about a single ray-shape intersection corresponding to the first intersection
+		/// if any in the (0, tMax) parametric range along the ray.
+		/// </summary>
+		/// <param name="ray">The ray.</param>
+		/// <param name="tHit">Pointer to store the parametric distance along the ray if intersection is found. (for multiple intersection, the closest one is returned)</param>
+		/// <param name="isect">Pointer to store information about the intersection. (Completly caputres the local geometric pproperties of a surface)</param>
+		/// <param name="testAlphaTexture">if set to <c>true</c> the function shoudl perform an alpha cutting operation.</param>
+		/// <returns></returns>
+		bool Intersect(const Ray& ray,
+						Float* tHit,
+						SurfaceInteraction* isect,
+						bool testAlphaTexture = true) const;
+
+		/// <summary>
+		/// Predicate function that determines whether or not an intersection occurs, without returning any details about the intersection itself.
+		/// </summary>
+		/// <param name="ray">The ray.</param>
+		/// <param name="testAlphaTexture">if set to <c>true</c> [test alpha texture].</param>
+		/// <returns></returns>
+		bool IntersectP(const Ray& ray,
+						bool testAlphaTexture = true) const;
+
+		/// <summary>
+		/// Returns the area of the surface. (e.g. to use as area lights)
+		/// </summary>
+		/// <returns></returns>
 		Float Area() const;
 
 		using Shape::Sample;  // Bring in the other Sample() overload.
@@ -115,13 +150,17 @@ namespace pbrt {
 
 	private:
 		// Triangle Private Methods
+		/// <summary>
+		/// Utility Function, that returns the (u,v) coordinates for the three vertices of the triangle
+		/// </summary>
+		/// <param name="uv">The uv.</param>
 		void GetUVs(Point2f uv[3]) const {
 			if (mesh->uv) {
 				uv[0] = mesh->uv[v[0]];
 				uv[1] = mesh->uv[v[1]];
 				uv[2] = mesh->uv[v[2]];
 			}
-			else {
+			else {	// returning default values if explicit (u,v) coordinates were not specified with the mesh
 				uv[0] = Point2f(0, 0);
 				uv[1] = Point2f(1, 0);
 				uv[2] = Point2f(1, 1);
@@ -130,27 +169,55 @@ namespace pbrt {
 
 		// Triangle Private Data
 		std::shared_ptr<TriangleMesh> mesh;	// pointer to the parent TriangleMesh
-		const int* v;
+		const int* v;	// Stores a pointer to the first vertex index.
 		int faceIndex;
 	};
+	/// <summary>
+	/// Creates the triangle mesh as well as a Triangle for each triangle in the mesh.
+	/// </summary>
+	/// <param name="ObjectToWorld">The object to world.</param>
+	/// <param name="WorldToObject">The world to object.</param>
+	/// <param name="reverseOrientation">if set to <c>true</c> [reverse orientation].</param>
+	/// <param name="nTriangles">The n triangles.</param>
+	/// <param name="vertexIndices">The vertex indices.</param>
+	/// <param name="nVertices">The n vertices.</param>
+	/// <param name="p">The p.</param>
+	/// <param name="s">The s.</param>
+	/// <param name="n">The n.</param>
+	/// <param name="uv">The uv.</param>
+	/// <param name="alphaMask">The alpha mask.</param>
+	/// <param name="shadowAlphaMask">The shadow alpha mask.</param>
+	/// <param name="faceIndices">The face indices.</param>
+	/// <returns>Vector of triangle shapes</returns>
+	std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(	const Transform* o2w, 
+															const Transform* w2o,
+															bool reverseOrientation,
+															int nTriangles,
+															const int* vertexIndices,
+															int nVertices,
+															const Point3f* p,
+															const Vector3f* s, 
+															const Normal3f* n, 
+															const Point2f* uv,
+															const std::shared_ptr<Texture<Float>>& alphaTexture,
+															const std::shared_ptr<Texture<Float>>& shadowAlphaTexture,
+															const int* faceIndices = nullptr);
 
-	std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
-		const Transform* o2w, const Transform* w2o, bool reverseOrientation,
-		int nTriangles, const int* vertexIndices, int nVertices, const Point3f* p,
-		const Vector3f* s, const Normal3f* n, const Point2f* uv,
-		const std::shared_ptr<Texture<Float>>& alphaTexture,
-		const std::shared_ptr<Texture<Float>>& shadowAlphaTexture,
-		const int* faceIndices = nullptr);
-	std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
-		const Transform* o2w, const Transform* w2o, bool reverseOrientation,
-		const ParamSet& params,
-		std::map<std::string, std::shared_ptr<Texture<Float>>>* floatTextures =
-		nullptr);
+	std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(const Transform* o2w, 
+																const Transform* w2o,
+																bool reverseOrientation,
+																const ParamSet& params,
+																std::map<std::string, std::shared_ptr<Texture<Float>>>* floatTextures =	nullptr);
 
-	bool WritePlyFile(const std::string& filename, int nTriangles,
-		const int* vertexIndices, int nVertices, const Point3f* P,
-		const Vector3f* S, const Normal3f* N, const Point2f* UV,
-		const int* faceIndices);
+	bool WritePlyFile(	const std::string& filename,
+						int nTriangles,
+						const int* vertexIndices,
+						int nVertices,
+						const Point3f* P,
+						const Vector3f* S,
+						const Normal3f* N,
+						const Point2f* UV,
+						const int* faceIndices);
 
 }  // namespace pbrt
 
