@@ -66,16 +66,23 @@ namespace pbrt {
 
 	inline void SubdivideBezier(const Point3f cp[4], 
 								Point3f cpSplit[7]) {
-		cpSplit[0] = cp[0];
-		cpSplit[1] = (cp[0] + cp[1]) / 2;
-		cpSplit[2] = (cp[0] + 2 * cp[1] + cp[2]) / 4;
-		cpSplit[3] = (cp[0] + 3 * cp[1] + 3 * cp[2] + cp[3]) / 8;
-		cpSplit[4] = (cp[1] + 2 * cp[2] + cp[3]) / 4;
-		cpSplit[5] = (cp[2] + cp[3]) / 2;
-		cpSplit[6] = cp[3];
+		cpSplit[0] = cp[0];												// (  0,   0,   0)
+		cpSplit[1] = (cp[0] + cp[1]) / 2;								// (  0,   0, 1/2) 
+		cpSplit[2] = (cp[0] + 2 * cp[1] + cp[2]) / 4;					// (  0, 1/2, 1/2)
+		cpSplit[3] = (cp[0] + 3 * cp[1] + 3 * cp[2] + cp[3]) / 8;		// (1/2, 1/2, 1/2)
+		cpSplit[4] = (cp[1] + 2 * cp[2] + cp[3]) / 4;					// (1/2, 1/2,   1)
+		cpSplit[5] = (cp[2] + cp[3]) / 2;								// (1/2,   1,   1)
+		cpSplit[6] = cp[3];												// (  1,   1,   1)
 	}
 
-	static Point3f EvalBezier(	const Point3f cp[4],
+	/// <summary>
+	/// Computes the blossom p(u,u,u) to evaluate a point on a Bezier spline.
+	/// </summary>
+	/// <param name="cp">The cp.</param>
+	/// <param name="u">The u.</param>
+	/// <param name="deriv">The derivative of the curve at the point.</param>
+	/// <returns></returns>
+	static Point3f EvalBezier(const Point3f cp[4],
 								Float u,
 								Vector3f * deriv = nullptr) {
 		Point3f cp1[3] = { Lerp(u, cp[0], cp[1]), Lerp(u, cp[1], cp[2]),
@@ -288,7 +295,8 @@ namespace pbrt {
 		if (depth > 0) {
 			// Split curve segment into sub-segments and test for intersection
 			Point3f cpSplit[7];
-			SubdivideBezier(cp, cpSplit);
+			SubdivideBezier(cp, cpSplit);	// computes 7 control points (1-4: correspond to the control points for the first half of the split curve; 5-8: starting with the last control points for the first
+											// half, correspond to the control points of the second half
 
 			// For each of the two segments, see if the ray's bounding box
 			// overlaps the segment before recursively checking for
@@ -328,7 +336,7 @@ namespace pbrt {
 						std::min(cps[2].z, cps[3].z)) -
 					0.5 * maxWidth > zMax)
 					continue;
-
+				// test the two sub-segments
 				hit |= recursiveIntersect(ray, tHit, isect, cps, rayToObject,
 					u[seg], u[seg + 1], depth - 1);
 				// If we found an intersection and this is a shadow ray,
@@ -337,47 +345,53 @@ namespace pbrt {
 			}
 			return hit;
 		}
-		else {
+		else {	// after a maximum number of subdivisions an intersection test is performed
 			// Intersect ray with curve segment
 
 			// Test ray against segment endpoint boundaries
+			// compute edge functions for lines perpendicular to the curve stating point and ending point and to classify the potential intersection
+			// point against them
 
-			// Test sample point against tangent perpendicular at curve start
-			Float edge =
-				(cp[1].y - cp[0].y) * -cp[0].y + cp[0].x * (cp[0].x - cp[1].x);
-			if (edge < 0) return false;
+				// Test sample point against tangent perpendicular at curve start
+				Float edge =
+					(cp[1].y - cp[0].y) * -cp[0].y + cp[0].x * (cp[0].x - cp[1].x);
+				if (edge < 0) return false;
 
-			// Test sample point against tangent perpendicular at curve end
-			edge = (cp[2].y - cp[3].y) * -cp[3].y + cp[3].x * (cp[3].x - cp[2].x);
-			if (edge < 0) return false;
+				// Test sample point against tangent perpendicular at curve end		
+				// does the corresponding test at the end of the curve
+				edge = (cp[2].y - cp[3].y) * -cp[3].y + cp[3].x * (cp[3].x - cp[2].x);
+				if (edge < 0) return false;
 
-			// Compute line $w$ that gives minimum distance to sample point
-			Vector2f segmentDirection = Point2f(cp[3]) - Point2f(cp[0]);
-			Float denom = segmentDirection.LengthSquared();
-			if (denom == 0) return false;
-			Float w = Dot(-Vector2f(cp[0]), segmentDirection) / denom;
+				// Compute line $w$ that gives minimum distance to sample point
+				Vector2f segmentDirection = Point2f(cp[3]) - Point2f(cp[0]);
+				Float denom = segmentDirection.LengthSquared();
+				if (denom == 0) return false;
+				Float w = Dot(-Vector2f(cp[0]), segmentDirection) / denom;
 
-			// Compute $u$ coordinate of curve intersection point and _hitWidth_
-			Float u = Clamp(Lerp(w, u0, u1), u0, u1);
-			Float hitWidth = Lerp(u, common->width[0], common->width[1]);
-			Normal3f nHit;
-			if (common->type == CurveType::Ribbon) {
-				// Scale _hitWidth_ based on ribbon orientation
-				Float sin0 = std::sin((1 - u) * common->normalAngle) *
-					common->invSinNormalAngle;
-				Float sin1 =
-					std::sin(u * common->normalAngle) * common->invSinNormalAngle;
-				nHit = sin0 * common->n[0] + sin1 * common->n[1];
-				hitWidth *= AbsDot(nHit, ray.d) / rayLength;
-			}
+				// Compute $u$ coordinate of curve intersection point and _hitWidth_
+				// by linearly interpolating along the u range of the segment.
+				Float u = Clamp(Lerp(w, u0, u1), u0, u1);
+				Float hitWidth = Lerp(u, common->width[0], common->width[1]);
+				Normal3f nHit;
+				if (common->type == CurveType::Ribbon) {
+					// Scale _hitWidth_ based on ribbon orientation (which is interpolated between 2 surface normals given at each endpoint) 
+					Float sin0 = std::sin((1 - u) * common->normalAngle) *
+						common->invSinNormalAngle;
+					Float sin1 =
+						std::sin(u * common->normalAngle) * common->invSinNormalAngle;
+					nHit = sin0 * common->n[0] + sin1 * common->n[1];	// spherical linear interpolation is used to interpolate the normal at u
+					hitWidth *= AbsDot(nHit, ray.d) / rayLength;	// curve's width is scaled by the cosine of the angle between the normalized ray direction and the ribbon's orientation
+																	// so that it reflects the visible width of the curve from the given direction
+				}
 
 			// Test intersection point against curve width
 			Vector3f dpcdw;
-			Point3f pc = EvalBezier(cp, Clamp(w, 0, 1), &dpcdw);
+			Point3f pc = EvalBezier(cp, Clamp(w, 0, 1), &dpcdw); // evaluated the curve at u; using w instead of u since its in the range [0,1]
 			Float ptCurveDist2 = pc.x * pc.x + pc.y * pc.y;
-			if (ptCurveDist2 > hitWidth * hitWidth * .25) return false;
+			if (ptCurveDist2 > hitWidth * hitWidth * .25) return false;		// test whether the distance from p to this point (pc) is less than half the curves width
+																			//    here: whether the squared distance is less than one quarter the width squared
 			Float zMax = rayLength * ray.tMax;
-			if (pc.z < 0 || pc.z > zMax) return false;
+			if (pc.z < 0 || pc.z > zMax) return false;	// check if the intersection point is in the ray's parametric t range
 
 			// Compute $v$ coordinate of curve intersection point
 			Float ptCurveDist = std::sqrt(ptCurveDist2);
@@ -401,16 +415,16 @@ namespace pbrt {
 
 				if (common->type == CurveType::Ribbon)
 					dpdv = Normalize(Cross(nHit, dpdu)) * hitWidth;
-				else {
+				else {	// for flat and cylinder curves
 					// Compute curve $\dpdv$ for flat and cylinder curves
-					Vector3f dpduPlane = (Inverse(rayToObject))(dpdu);
+					Vector3f dpduPlane = (Inverse(rayToObject))(dpdu);	// transform dp/du to the intersection coordinate system
 					Vector3f dpdvPlane =
 						Normalize(Vector3f(-dpduPlane.y, dpduPlane.x, 0)) *
 						hitWidth;
 					if (common->type == CurveType::Cylinder) {
 						// Rotate _dpdvPlane_ to give cylindrical appearance
-						Float theta = Lerp(v, -90., 90.);
-						Transform rot = Rotate(-theta, dpduPlane);
+						Float theta = Lerp(v, -90., 90.);		
+						Transform rot = Rotate(-theta, dpduPlane);	// the dp/dv is rotated around the dpdu Plane axis so that its appearance resembles a cylindrical cross-section
 						dpdvPlane = rot(dpdvPlane);
 					}
 					dpdv = rayToObject(dpdvPlane);
