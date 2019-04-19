@@ -36,10 +36,12 @@ namespace pbrt {
 	struct SDVertex;
 
 	// LoopSubdiv Macros
-#define NEXT(i) (((i) + 1) % 3)
-#define PREV(i) (((i) + 2) % 3)
+	// Determine the vertex and face indices before or adter a particular index
+	// offsetsand copmute the result modulo three to handling cycling around
+	#define NEXT(i) (((i) + 1) % 3)	
+	#define PREV(i) (((i) + 2) % 3)	
 
-// LoopSubdiv Local Structures
+	// LoopSubdiv Local Structures
 	/// <summary>
 	/// Subdivision Surface Vertex
 	/// </summary>
@@ -73,16 +75,49 @@ namespace pbrt {
 		}
 
 		// SDFace Methods
-		int vnum(SDVertex * vert) const {
+		/// <summary>
+		/// Finds the index of a given vertex pointer.
+		/// It is a fatal error to pass a pointer to a vertex that isn't 
+		/// part of the current face - this case would represent a bug elsewhere
+		/// in the subdivision code.
+		/// </summary>
+		/// <param name="vert">Vertex Pointer</param>
+		/// <returns></returns>
+		int vnum(SDVertex* vert) const {
 			for (int i = 0; i < 3; ++i)
 				if (v[i] == vert) return i;
 			LOG(FATAL) << "Basic logic error in SDFace::vnum()";
 			return -1;
 		}
-		SDFace * nextFace(SDVertex * vert) { return f[vnum(vert)]; }
-		SDFace* prevFace(SDVertex * vert) { return f[PREV(vnum(vert))]; }
-		SDVertex* nextVert(SDVertex * vert) { return v[NEXT(vnum(vert))]; }
-		SDVertex* prevVert(SDVertex * vert) { return v[PREV(vnum(vert))]; }
+
+
+		/// <summary>
+		/// The next face is over the ith edge.
+		/// </summary>
+		/// <param name="vert">The vert.</param>
+		/// <returns></returns>
+		SDFace* nextFace(SDVertex* vert) { return f[vnum(vert)]; }
+		
+		/// <summary>
+		/// The previous face is across the ede from PREV(i) to i
+		/// </summary>
+		/// <param name="vert">The vert.</param>
+		/// <returns></returns>
+		SDFace* prevFace(SDVertex* vert) { return f[PREV(vnum(vert))]; }
+
+		/// <summary>
+		/// Returns the next vertice
+		/// </summary>
+		/// <param name="vert">The vert.</param>
+		/// <returns></returns>
+		SDVertex* nextVert(SDVertex* vert) { return v[NEXT(vnum(vert))]; }
+		/// <summary>
+		/// Returns the previous vertice.
+		/// </summary>
+		/// <param name="vert">The vert.</param>
+		/// <returns></returns>
+		SDVertex* prevVert(SDVertex* vert) { return v[PREV(vnum(vert))]; }
+		
 		SDVertex* otherVert(SDVertex * v0, SDVertex * v1) {
 			for (int i = 0; i < 3; ++i)
 				if (v[i] != v0 && v[i] != v1) return v[i];
@@ -96,18 +131,31 @@ namespace pbrt {
 
 	struct SDEdge {
 		// SDEdge Constructor
+		/// <summary>
+		/// Initializes a new instance of the <see cref="SDEdge"/> struct.
+		/// Takes pointers to the two vertices at each end of the edge.
+		/// </summary>
+		/// <param name="v0">The v0.</param>
+		/// <param name="v1">The v1.</param>
 		SDEdge(SDVertex* v0 = nullptr, SDVertex* v1 = nullptr) {
-			v[0] = std::min(v0, v1);
+			v[0] = std::min(v0, v1);	// orders them, so v[0] is the first in memory
 			v[1] = std::max(v0, v1);
 			f[0] = f[1] = nullptr;
 			f0edgeNum = -1;
 		}
 
 		// SDEdge Comparison Function
+		/// <summary>
+		/// Ordering operation for SDEdge objects so that they can be stored in
+		/// other data structures that rely on ordering being well defined.
+		/// </summary>
+		/// <param name="e2">The e2.</param>
+		/// <returns></returns>
 		bool operator<(const SDEdge& e2) const {
 			if (v[0] == e2.v[0]) return v[1] < e2.v[1];
 			return v[0] < e2.v[0];
 		}
+
 		SDVertex* v[2];
 		SDFace* f[2];
 		int f0edgeNum;
@@ -118,21 +166,30 @@ namespace pbrt {
 	static Point3f weightBoundary(SDVertex* vert, Float beta);
 
 	// LoopSubdiv Inline Functions
+	/// <summary>
+	/// Returns the valence of the vertex.
+	/// </summary>
+	/// <returns></returns>
 	inline int SDVertex::valence() {
 		SDFace* f = startFace;
 		if (!boundary) {
-			// Compute valence of interior vertex
-			int nf = 1;
+			// Compute valence of interior (non-boundary) vertex
+			int nf = 1; 
 			while ((f = f->nextFace(this)) != startFace) ++nf;
-			return nf;
+			// copmute number of adjacent faces starting by following each face's
+			// neighbor pointers around the vertex until it reaches the starting
+			// face
+			return nf;	// the valence is equal to the number of faces visited
 		}
 		else {
 			// Compute valence of boundary vertex
 			int nf = 1;
 			while ((f = f->nextFace(this)) != nullptr) ++nf;
+			// follows pointer to the next face around until it reaches the boundary
 			f = startFace;
 			while ((f = f->prevFace(this)) != nullptr) ++nf;
-			return nf + 1;
+			// follows pointers to the previous face around until it reaches the boundary
+			return nf + 1; // the valence is one more than the number of adjacent faces
 		}
 	}
 
@@ -153,6 +210,8 @@ namespace pbrt {
 	/// and vertex indices.
 	/// The control mesh has to be manifold - no more than 2 faces share any given
 	/// edge. It may be closed or open.
+	/// Expects that the control mesh is consistently ordered. Each directed edge in the
+	/// mesh can be present only once.
 	/// </summary>
 	/// <param name="ObjectToWorld">The object to world.</param>
 	/// <param name="WorldToObject">The world to object.</param>
@@ -189,35 +248,39 @@ namespace pbrt {
 
 		// Set face to vertex pointers
 		const int* vp = vertexIndices;
-		for (int i = 0; i < nFaces; ++i, vp += 3) {
+		for (int i = 0; i < nFaces; ++i, vp += 3) {	// loops over all faces
 			SDFace* f = faces[i];
 			for (int j = 0; j < 3; ++j) {
-				SDVertex* v = vertices[vp[j]];
-				f->v[j] = v;
-				v->startFace = f;
+				SDVertex* v = vertices[vp[j]];	// pointer to their vertices
+				f->v[j] = v;		//
+				v->startFace = f; // pointer to one of the vertex's neighboring faces (reset every time)
 			}
 		}
 
 		// Set neighbor pointers in _faces_
-		std::set<SDEdge> edges;
-		for (int i = 0; i < nFaces; ++i) {
-			SDFace* f = faces[i];
-			for (int edgeNum = 0; edgeNum < 3; ++edgeNum) {
+		std::set<SDEdge> edges;	// makes it possible to search for a particular edge in O(logn)
+					// stores the edges that have only one adjacent face so far
+		for (int i = 0; i < nFaces; ++i) {	//loops over the faces
+			SDFace* f = faces[i];			
+			for (int edgeNum = 0; edgeNum < 3; ++edgeNum) { // loop over their three edges
 				// Update neighbor pointer for _edgeNum_
+				// Updates neighbor pointers as it goes
 				int v0 = edgeNum, v1 = NEXT(edgeNum);
-				SDEdge e(f->v[v0], f->v[v1]);
-				if (edges.find(e) == edges.end()) {
+				SDEdge e(f->v[v0], f->v[v1]);	// creates an SDEdge object
+				if (edges.find(e) == edges.end()) {	// checks if the same edge has been seen previously
 					// Handle new edge
-					e.f[0] = f;
-					e.f0edgeNum = edgeNum;
+					// adds the edge to the set of edges
+					e.f[0] = f;				// store current face's pointer
+					e.f0edgeNum = edgeNum;	// 
 					edges.insert(e);
 				}
 				else {
 					// Handle previously seen edge
+					// initialize both faces' neighbor pointers across the edge
 					e = *edges.find(e);
-					e.f[0]->f[e.f0edgeNum] = f;
-					f->f[edgeNum] = e.f[0];
-					edges.erase(e);
+					e.f[0]->f[e.f0edgeNum] = f;	// set neighboring face for each face
+					f->f[edgeNum] = e.f[0];	// set neighboring face for each face
+					edges.erase(e); // remove edge from the edge set
 				}
 			}
 		}
@@ -228,14 +291,16 @@ namespace pbrt {
 			SDFace* f = v->startFace;
 			do {
 				f = f->nextFace(v);
-			} while (f && f != v->startFace);
+			} while (f && f != v->startFace); // determine if a vertex is a boundary
+											// vertex following next facepointers around
+											// the vertex
 			v->boundary = (f == nullptr);
 			if (!v->boundary && v->valence() == 6)
-				v->regular = true;
+				v->regular = true; // if valence is 6 for an interior vertex 
 			else if (v->boundary && v->valence() == 4)
-				v->regular = true;
+				v->regular = true;	// if valence is 4 for a boundary vertex
 			else
-				v->regular = false;
+				v->regular = false;	// otherwise it's an extraordinary vertex
 		}
 
 		// Refine _LoopSubdiv_ into triangles
