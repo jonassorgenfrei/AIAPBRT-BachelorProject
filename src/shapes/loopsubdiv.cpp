@@ -118,7 +118,13 @@ namespace pbrt {
 		/// <returns></returns>
 		SDVertex* prevVert(SDVertex* vert) { return v[PREV(vnum(vert))]; }
 		
-		SDVertex* otherVert(SDVertex * v0, SDVertex * v1) {
+		/// <summary>
+		/// Returns the vertex opposite a given edge of a face.
+		/// </summary>
+		/// <param name="v0">The v0.</param>
+		/// <param name="v1">The v1.</param>
+		/// <returns></returns>
+		SDVertex* otherVert(SDVertex* v0, SDVertex* v1) {
 			for (int i = 0; i < 3; ++i)
 				if (v[i] != v0 && v[i] != v1) return v[i];
 			LOG(FATAL) << "Basic logic error in SDVertex::otherVert()";
@@ -193,6 +199,11 @@ namespace pbrt {
 		}
 	}
 
+	/// <summary>
+	/// Computes a beta value based on the vertex's valence, that ensures smoothness.
+	/// </summary>
+	/// <param name="valence">The valence.</param>
+	/// <returns></returns>
 	inline Float beta(int valence) {
 		if (valence == 3)
 			return 3.f / 16.f;
@@ -200,6 +211,11 @@ namespace pbrt {
 			return 3.f / (8.f * valence);
 	}
 
+	/// <summary>
+	/// Computes appropriate vertex weights based on the valence of the vertex.
+	/// </summary>
+	/// <param name="valence">The valence.</param>
+	/// <returns></returns>
 	inline Float loopGamma(int valence) {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
@@ -303,23 +319,24 @@ namespace pbrt {
 				v->regular = false;	// otherwise it's an extraordinary vertex
 		}
 
-		// Refine _LoopSubdiv_ into triangles
-		std::vector<SDFace*> f = faces;
+		// Refine _LoopSubdiv_ into triangles ==> repeatedly applies the subdivision rules to the mesh, 
+		// each time generating a new mesh to be used as the input to the next step
+		std::vector<SDFace*> f = faces;		
 		std::vector<SDVertex*> v = vertices;
-		MemoryArena arena;
+		MemoryArena arena;		// allocate temporary storage through this process.
 		for (int i = 0; i < nLevels; ++i) {
 			// Update _f_ and _v_ for next level of subdivision
 			std::vector<SDFace*> newFaces;
 			std::vector<SDVertex*> newVertices;
 
-			// Allocate next level of children in mesh tree
-			for (SDVertex* vertex : v) {
+			// Allocate (storage) next level of children in mesh tree
+			for (SDVertex* vertex : v) {	// for vertices
 				vertex->child = arena.Alloc<SDVertex>();
 				vertex->child->regular = vertex->regular;
 				vertex->child->boundary = vertex->boundary;
 				newVertices.push_back(vertex->child);
 			}
-			for (SDFace* face : f) {
+			for (SDFace* face : f) {	// for child faces
 				for (int k = 0; k < 4; ++k) {
 					face->children[k] = arena.Alloc<SDFace>();
 					newFaces.push_back(face->children[k]);
@@ -340,34 +357,34 @@ namespace pbrt {
 				}
 				else {
 					// Apply boundary rule for even vertex
-					vertex->child->p = weightBoundary(vertex, 1.f / 8.f);
+					vertex->child->p = weightBoundary(vertex, 1.f / 8.f);	// note: same weight: 1/8 is used for regular and extraordinary vertices
 				}
 			}
 
 			// Compute new odd edge vertices
-			std::map<SDEdge, SDVertex*> edgeVerts;
+			std::map<SDEdge, SDVertex*> edgeVerts;	// associative array structure that performs efficient lookups
 			for (SDFace* face : f) {
-				for (int k = 0; k < 3; ++k) {
+				for (int k = 0; k < 3; ++k) {	// loops over each edge of each face in the mesh, computing the new vertex that splits the edge
 					// Compute odd vertex on _k_th edge
-					SDEdge edge(face->v[k], face->v[NEXT(k)]);
-					SDVertex* vert = edgeVerts[edge];
+					SDEdge edge(face->v[k], face->v[NEXT(k)]);	// create an SDEdge-Object for the edge and checked to see if it is in the set of edges that has already been visited
+					SDVertex* vert = edgeVerts[edge];		// compute the new vertex on this edge
 					if (!vert) {
 						// Create and initialize new odd vertex
 						vert = arena.Alloc<SDVertex>();
 						newVertices.push_back(vert);
-						vert->regular = true;
-						vert->boundary = (face->f[k] == nullptr);
-						vert->startFace = face->children[3];
+						vert->regular = true;		// all (new) vertices will be regular
+						vert->boundary = (face->f[k] == nullptr);	// initialize the boundary member
+						vert->startFace = face->children[3];	// set new vertex's startFace pointer (child face number three (center) is guaranteed to be adjacent to the new vertex)
 
 						// Apply edge rules to compute new vertex position
-						if (vert->boundary) {
-							vert->p = 0.5f * edge.v[0]->p;
+						if (vert->boundary) {	// boundary vertices's
+							vert->p = 0.5f * edge.v[0]->p;		// just the average of the two adjacent vertices
 							vert->p += 0.5f * edge.v[1]->p;
 						}
-						else {
-							vert->p = 3.f / 8.f * edge.v[0]->p;
+						else {	// interior vertices's
+							vert->p = 3.f / 8.f * edge.v[0]->p;	// 2 vertices at the end of the edge with weight 3/8
 							vert->p += 3.f / 8.f * edge.v[1]->p;
-							vert->p += 1.f / 8.f *
+							vert->p += 1.f / 8.f *				// 2 vertices opposite the edge with weight 1/8
 								face->otherVert(edge.v[0], edge.v[1])->p;
 							vert->p +=
 								1.f / 8.f *
@@ -381,23 +398,24 @@ namespace pbrt {
 			// Update new mesh topology
 
 			// Update even vertex face pointers
-			for (SDVertex* vertex : v) {
-				int vertNum = vertex->startFace->vnum(vertex);
-				vertex->child->startFace = vertex->startFace->children[vertNum];
+			for (SDVertex* vertex : v) {	// loop through all the parent vertices in the mesh
+				int vertNum = vertex->startFace->vnum(vertex);						// find its vertex indix in its startface
+				vertex->child->startFace = vertex->startFace->children[vertNum];	// use index to find the child face adjacent to the new even vertex
 			}
 
 			// Update face neighbor pointers
 			for (SDFace* face : f) {
 				for (int j = 0; j < 3; ++j) {
 					// Update children _f_ pointers for siblings
-					face->children[3]->f[j] = face->children[NEXT(j)];
-					face->children[j]->f[NEXT(j)] = face->children[3];
+					face->children[3]->f[j] = face->children[NEXT(j)];		// the k+1st child face (k = 0,1,2) is across the kth edge of the interior face
+																			// the interior face is across the k+1st edge of the kth face
+					face->children[j]->f[NEXT(j)] = face->children[3];		// the interior face is always sotred in children[3]
 
 					// Update children _f_ pointers for neighbor children
-					SDFace* f2 = face->f[j];
-					face->children[j]->f[j] =
-						f2 ? f2->children[f2->vnum(face->v[j])] : nullptr;
-					f2 = face->f[PREV(j)];
+					SDFace* f2 = face->f[j];	// find the neighbor parent across that edge
+					face->children[j]->f[j] =		//set the kth edges of the ith child
+						f2 ? f2->children[f2->vnum(face->v[j])] : nullptr;	// check if f2 is NOT a boundary face
+					f2 = face->f[PREV(j)];		// set the PREV(k)th of the ith child
 					face->children[j]->f[PREV(j)] =
 						f2 ? f2->children[f2->vnum(face->v[j])] : nullptr;
 				}
@@ -407,11 +425,14 @@ namespace pbrt {
 			for (SDFace* face : f) {
 				for (int j = 0; j < 3; ++j) {
 					// Update child vertex pointer to new even vertex
-					face->children[j]->v[j] = face->v[j]->child;
+					// for the kth child face the kth vertex corresponds to the even vertex that is adjacent to the child face
+
+					face->children[j]->v[j] = face->v[j]->child;	// find the even vertex for the non interior child faces[1 even; 2 odd]  (the interior faces have three odd vertices)
 
 					// Update child vertex pointer to new odd vertex
 					SDVertex* vert =
-						edgeVerts[SDEdge(face->v[j], face->v[NEXT(j)])];
+						edgeVerts[SDEdge(face->v[j], face->v[NEXT(j)])];		// to find the off vertex for each split edge of the parent face
+					// three child faces have that vertex as an incident vertex
 					face->children[j]->v[NEXT(j)] = vert;
 					face->children[NEXT(j)]->v[j] = vert;
 					face->children[3]->v[j] = vert;
@@ -419,17 +440,18 @@ namespace pbrt {
 			}
 
 			// Prepare for next level of subdivision
-			f = newFaces;
+			// point to the next level of subdivision
+			f = newFaces;	// move newly created vertices and faces into the v and f arrays
 			v = newVertices;
 		}
 
 		// Push vertices to limit surface
-		std::unique_ptr<Point3f[]> pLimit(new Point3f[v.size()]);
+		std::unique_ptr<Point3f[]> pLimit(new Point3f[v.size()]);	// initialize an array of limit surface positions
 		for (size_t i = 0; i < v.size(); ++i) {
 			if (v[i]->boundary)
-				pLimit[i] = weightBoundary(v[i], 1.f / 5.f);
+				pLimit[i] = weightBoundary(v[i], 1.f / 5.f);		// limit rule for boundary vertex weights
 			else
-				pLimit[i] = weightOneRing(v[i], loopGamma(v[i]->valence()));
+				pLimit[i] = weightOneRing(v[i], loopGamma(v[i]->valence()));	// limit rule for interior vertices
 		}
 		for (size_t i = 0; i < v.size(); ++i) v[i]->p = pLimit[i];
 
@@ -442,6 +464,7 @@ namespace pbrt {
 			int valence = vertex->valence();
 			if (valence > (int)pRing.size()) pRing.resize(valence);
 			vertex->oneRing(&pRing[0]);
+			// compute a pair of non-parallel tangent vectors
 			if (!vertex->boundary) {
 				// Compute tangents of interior face
 				for (int j = 0; j < valence; ++j) {
@@ -451,7 +474,9 @@ namespace pbrt {
 			}
 			else {
 				// Compute tangents of boundary face
-				S = pRing[valence - 1] - pRing[0];
+				S = pRing[valence - 1] - pRing[0];	// across tangent is given by the vector between the two neighboring boundary vertices
+				// computing transverse tangent, based on the vertex valence
+				// the weights sum to zero for all values of i, the weighted sum is in fact a tangent vector
 				if (valence == 2)
 					T = Vector3f(pRing[0] + pRing[1] - 2 * vertex->p);
 				else if (valence == 3)
@@ -474,6 +499,8 @@ namespace pbrt {
 
 		// Create triangle mesh from subdivision mesh
 		{
+			// initializes a vector of Triangles corresponding to the triangulation of the limit surface
+			// transformation of the subdivided mesh into an indexed triangle mesh
 			size_t ntris = f.size();
 			std::unique_ptr<int[]> verts(new int[3 * ntris]);
 			int* vp = verts.get();
@@ -517,7 +544,13 @@ namespace pbrt {
 			vertexIndices, nps, P);
 	}
 
-	static Point3f weightOneRing(SDVertex * vert, Float beta) {
+	/// <summary>
+	/// Loops overt the one-ring of adjacent vertices and applies the given weight to compute a new vertex Position.
+	/// </summary>
+	/// <param name="vert">The vert.</param>
+	/// <param name="beta">The beta.</param>
+	/// <returns></returns>
+	static Point3f weightOneRing(SDVertex* vert, Float beta) {
 		// Put _vert_ one-ring in _pRing_
 		int valence = vert->valence();
 		Point3f* pRing = ALLOCA(Point3f, valence);
@@ -527,7 +560,11 @@ namespace pbrt {
 		return p;
 	}
 
-	void SDVertex::oneRing(Point3f * p) {
+	/// <summary>
+	/// Ones the ring.
+	/// </summary>
+	/// <param name="p">Pointer, which points to an area of memory large enough to hold the one-ring-around the vertex</param>
+	void SDVertex::oneRing(Point3f* p) {
 		if (!boundary) {
 			// Get one-ring vertices for interior vertex
 			SDFace* face = startFace;
@@ -539,7 +576,7 @@ namespace pbrt {
 		else {
 			// Get one-ring vertices for boundary vertex
 			SDFace* face = startFace, * f2;
-			while ((f2 = face->nextFace(this)) != nullptr) face = f2;
+			while ((f2 = face->nextFace(this)) != nullptr) face = f2;	// first looping around neighbors faces until boundary (to start with)
 			*p++ = face->nextVert(this)->p;
 			do {
 				*p++ = face->prevVert(this)->p;
@@ -548,14 +585,20 @@ namespace pbrt {
 		}
 	}
 
-	static Point3f weightBoundary(SDVertex * vert, Float beta) {
+	/// <summary>
+	/// Applies the given widhts at a boundary vertex.
+	/// </summary>
+	/// <param name="vert">Vertex Pointer</param>
+	/// <param name="beta">The beta value</param>
+	/// <returns></returns>
+	static Point3f weightBoundary(SDVertex* vert, Float beta) {
 		// Put _vert_ one-ring in _pRing_
 		int valence = vert->valence();
-		Point3f* pRing = ALLOCA(Point3f, valence);
+		Point3f* pRing = ALLOCA(Point3f, valence);	//efficiently allocate space to store their positions
 		vert->oneRing(pRing);
 		Point3f p = (1 - 2 * beta) * vert->p;
-		p += beta * pRing[0];
-		p += beta * pRing[valence - 1];
+		p += beta * pRing[0];				// can be used since the oneRing function orders the boundary vertex's one-ring such 
+		p += beta * pRing[valence - 1];		// that the 1. and last entries are boundary neighbors.
 		return p;
 	}
 
