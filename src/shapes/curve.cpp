@@ -404,7 +404,7 @@ namespace pbrt {
 				// FIXME: this tHit isn't quite right for ribbons...
 				*tHit = pc.z / rayLength;
 				// Compute error bounds for curve intersection
-				Vector3f pError(2 * hitWidth, 2 * hitWidth, 2 * hitWidth);
+				Vector3f pError(2 * hitWidth, 2 * hitWidth, 2 * hitWidth);	// offset by twice the curve's width in order tonot incorrectly re-intersect it when it's reoriented to face them
 
 				// Compute $\dpdu$ and $\dpdv$ for curve intersection
 				Vector3f dpdu, dpdv;

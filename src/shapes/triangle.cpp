@@ -363,7 +363,7 @@ namespace pbrt {
 				(std::abs(b0 * p0.y) + std::abs(b1 * p1.y) + std::abs(b2 * p2.y));
 			Float zAbsSum =
 				(std::abs(b0 * p0.z) + std::abs(b1 * p1.z) + std::abs(b2 * p2.z));
-			Vector3f pError = gamma(7) * Vector3f(xAbsSum, yAbsSum, zAbsSum);
+			Vector3f pError = gamma(7) * Vector3f(xAbsSum, yAbsSum, zAbsSum);		// using gamma 7 [y7(|b0x0|+|b1x1|+|b2x2|)]
 
 			// Interpolate $(u,v)$ parametric coordinates and hit point
 			Point3f pHit = b0 * p0 + b1 * p1 + b2 * p2;	// gives a more precise intersection point than evaluatinf the parametric ray equation using t
@@ -572,24 +572,27 @@ namespace pbrt {
 
 		// Compute $\delta_z$ term for triangle $t$ error bounds
 		Float maxZt = MaxComponent(Abs(Vector3f(p0t.z, p1t.z, p2t.z)));
-		Float deltaZ = gamma(3) * maxZt;
+		Float deltaZ = gamma(3) * maxZt;	// y3(max|zi|)
 
 		// Compute $\delta_x$ and $\delta_y$ terms for triangle $t$ error bounds
+		// compute as the difference of 2 products of transformed x and y vertex positions
 		Float maxXt = MaxComponent(Abs(Vector3f(p0t.x, p1t.x, p2t.x)));
 		Float maxYt = MaxComponent(Abs(Vector3f(p0t.y, p1t.y, p2t.y)));
-		Float deltaX = gamma(5) * (maxXt + maxZt);
-		Float deltaY = gamma(5) * (maxYt + maxZt);
+		Float deltaX = gamma(5) * (maxXt + maxZt); // y5(max|xi|+max|zi|)
+		Float deltaY = gamma(5) * (maxYt + maxZt); // y5(max|yi|+max|zi|)
 
 		// Compute $\delta_e$ term for triangle $t$ error bounds
 		Float deltaE =
 			2 * (gamma(2) * maxXt * maxYt + deltaY * maxXt + deltaX * maxYt);
+		// 2(y2max|xi|max|yi|+deltaY max|xi|+deltaX max|yi|)
 
 		// Compute $\delta_t$ term for triangle $t$ error bounds and check _t_
 		Float maxE = MaxComponent(Abs(Vector3f(e0, e1, e2)));
 		Float deltaT = 3 *
 			(gamma(3) * maxE * maxZt + deltaE * maxZt + deltaZ * maxE) *
-			std::abs(invDet);
-		if (t <= deltaT) return false;
+			std::abs(invDet); // 3(y3 max|ei| max|zi| + deltaE max|zi| + deltaZ max|ei|)
+		if (t <= deltaT) return false; // computed t value must be greater than the delta t
+		// value to be accepted as a valid intersection, that definitely has a positive t value
 
 		// Test shadow ray intersection against alpha texture, if present
 		if (testAlphaTexture && (mesh->alphaMask || mesh->shadowAlphaMask)) {

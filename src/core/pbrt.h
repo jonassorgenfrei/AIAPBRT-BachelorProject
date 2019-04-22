@@ -210,34 +210,60 @@ namespace pbrt {
 #endif
 
 	// Global Inline Functions
+	/// <summary>
+	/// Converts a float value to bits.
+	/// </summary>
+	/// <param name="f">Float Value</param>
+	/// <returns>Bits</returns>
 	inline uint32_t FloatToBits(float f) {
 		uint32_t ui;
 		memcpy(&ui, &f, sizeof(float));
 		return ui;
 	}
 
+	/// <summary>
+	/// Converts a bits to a float value.
+	/// </summary>
+	/// <param name="ui">Bits</param>
+	/// <returns>Float value</returns>
 	inline float BitsToFloat(uint32_t ui) {
 		float f;
 		memcpy(&f, &ui, sizeof(uint32_t));
 		return f;
 	}
 
+	/// <summary>
+	/// Converts a double value to bits.
+	/// </summary>
+	/// <param name="f">Double Value</param>
+	/// <returns>Bits</returns>
 	inline uint64_t FloatToBits(double f) {
 		uint64_t ui;
 		memcpy(&ui, &f, sizeof(double));
 		return ui;
 	}
 
+	/// <summary>
+	/// Converts a bits to a double value.
+	/// </summary>
+	/// <param name="ui">Bits</param>
+	/// <returns>Double value</returns>
 	inline double BitsToFloat(uint64_t ui) {
 		double f;
 		memcpy(&f, &ui, sizeof(uint64_t));
 		return f;
 	}
 
+	/// <summary>
+	/// Bump a floating-point value up to the next  
+	/// greater representable floating-point value
+	/// </summary>
+	/// <param name="v">Float Value</param>
+	/// <returns></returns>
 	inline float NextFloatUp(float v) {
 		// Handle infinity and negative zero for _NextFloatUp()_
-		if (std::isinf(v) && v > 0.) return v;
-		if (v == -0.f) v = 0.f;
+		if (std::isinf(v) && v > 0.) return v;	// check if it's positive infinity
+		if (v == -0.f) v = 0.f;	// convert negative zero to positive zero
 
 		// Advance _v_ to next higher float
 		uint32_t ui = FloatToBits(v);
@@ -248,10 +274,16 @@ namespace pbrt {
 		return BitsToFloat(ui);
 	}
 
+	/// <summary>
+	/// Bump a floating-point value down to the next 
+	/// smaller representable floating-point value
+	/// </summary>
+	/// <param name="v">Float Value</param>
+	/// <returns></returns>
 	inline float NextFloatDown(float v) {
 		// Handle infinity and positive zero for _NextFloatDown()_
-		if (std::isinf(v) && v < 0.) return v;
-		if (v == 0.f) v = -0.f;
+		if (std::isinf(v) && v < 0.) return v;	// check if it's negative infinity
+		if (v == 0.f) v = -0.f;	// convert positive zero to negtaive zero
 		uint32_t ui = FloatToBits(v);
 		if (v > 0)
 			--ui;
@@ -260,9 +292,15 @@ namespace pbrt {
 		return BitsToFloat(ui);
 	}
 
+	/// <summary>
+	/// Bump a floating-point value up to the next  
+	/// greater representable floating-point value
+	/// </summary>
+	/// <param name="v">Double Value</param>
+	/// <returns></returns>
 	inline double NextFloatUp(double v, int delta = 1) {
-		if (std::isinf(v) && v > 0.) return v;
-		if (v == -0.f) v = 0.f;
+		if (std::isinf(v) && v > 0.) return v;	// check if it's positive infinity
+		if (v == -0.f) v = 0.f;	// convert negative zero to positive zero
 		uint64_t ui = FloatToBits(v);
 		if (v >= 0.)
 			ui += delta;
@@ -271,9 +309,15 @@ namespace pbrt {
 		return BitsToFloat(ui);
 	}
 
+	/// <summary>
+	/// Bump a floating-point value down to the next  
+	/// smaller representable floating-point value
+	/// </summary>
+	/// <param name="v">Double Value</param>
+	/// <returns></returns>
 	inline double NextFloatDown(double v, int delta = 1) {
-		if (std::isinf(v) && v < 0.) return v;
-		if (v == 0.f) v = -0.f;
+		if (std::isinf(v) && v < 0.) return v;	// check if it's negative infinity
+		if (v == 0.f) v = -0.f;	// convert positive zero to negtaive zero
 		uint64_t ui = FloatToBits(v);
 		if (v > 0.)
 			ui -= delta;
@@ -282,6 +326,11 @@ namespace pbrt {
 		return BitsToFloat(ui);
 	}
 
+	/// <summary>
+	/// Function that computes conservative bounds forthe error.
+	/// </summary>
+	/// <param name="n">The power for the error</param>
+	/// <returns></returns>
 	inline Float gamma(int n) {
 		return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 	}

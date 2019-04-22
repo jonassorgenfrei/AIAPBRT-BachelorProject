@@ -389,6 +389,9 @@ namespace pbrt {
 		Vector3f d = (*this)(r.d);
 
 		// Offset ray origin to edge of error bounds and compute _tMax_
+		// advance origin to the edge of the bounds on the error.
+		// This ensures that the origin conservatively remains on the correct
+		// side of the surface it was spawned from, if any.
 		Float lengthSquared = d.LengthSquared();
 		Float tMax = r.tMax;
 		if (lengthSquared > 0) {	// manage floating-point round-off errors
@@ -422,13 +425,14 @@ namespace pbrt {
 		T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
 
 		// Compute absolute error for transformed point
+		// NOTE: buggy if the matrix is projective and the homogeneous w coordinateof the projected point is not one
 		T xAbsSum = (std::abs(m.m[0][0] * x) + std::abs(m.m[0][1] * y) +
 			std::abs(m.m[0][2] * z) + std::abs(m.m[0][3]));
 		T yAbsSum = (std::abs(m.m[1][0] * x) + std::abs(m.m[1][1] * y) +
 			std::abs(m.m[1][2] * z) + std::abs(m.m[1][3]));
 		T zAbsSum = (std::abs(m.m[2][0] * x) + std::abs(m.m[2][1] * y) +
 			std::abs(m.m[2][2] * z) + std::abs(m.m[2][3]));
-		*pError = gamma(3) * Vector3<T>(xAbsSum, yAbsSum, zAbsSum);
+		*pError = gamma(3) * Vector3<T>(xAbsSum, yAbsSum, zAbsSum);		// (y3(|m0,0x| + |m0,1y| + |m0,2z| + |m0,3|)
 		CHECK_NE(wp, 0);
 		if (wp == 1)
 			return Point3<T>(xp, yp, zp);
@@ -438,13 +442,14 @@ namespace pbrt {
 
 	template <typename T>
 	inline Point3<T> Transform::operator()(const Point3<T> &pt,
-		const Vector3<T> &ptError,
+		const Vector3<T> &ptError,	// point with error
 		Vector3<T> *absError) const {
 		T x = pt.x, y = pt.y, z = pt.z;
 		T xp = m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z + m.m[0][3];
 		T yp = m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z + m.m[1][3];
 		T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
 		T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
+		// (y3+1)(|m0,0|dx+|m0,1|dy+|m0,2|dz)+y3(|m0,0x|+|m0,1y|+|m0,2z|+|m0,3|)
 		absError->x =
 			(gamma(3) + (T)1) *
 			(std::abs(m.m[0][0]) * ptError.x + std::abs(m.m[0][1]) * ptError.y +

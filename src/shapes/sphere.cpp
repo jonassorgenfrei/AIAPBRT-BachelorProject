@@ -83,6 +83,7 @@ namespace pbrt {
 
 		// Refine sphere intersection point
 		pHit *= radius / Distance(pHit, Point3f(0, 0, 0));	// improves the precision of the intersection point
+															// reprojects the intersectionpoint for the sphere shape
 		
 		if (pHit.x == 0 && pHit.y == 0) pHit.x = 1e-5f * radius;
 		phi = std::atan2(pHit.y, pHit.x);

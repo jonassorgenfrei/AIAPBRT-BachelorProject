@@ -1649,7 +1649,15 @@ namespace pbrt {
 		return (tMin < ray.tMax) && (tMax > 0);
 	}
 
-	inline Point3f OffsetRayOrigin(const Point3f &p, const Vector3f &pError,
+	/// <summary>
+	/// Offsets the ray origin along the normal by minimizing the distance.
+	/// </summary>
+	/// <param name="p">The p.</param>
+	/// <param name="pError">The p error.</param>
+	/// <param name="n">The n.</param>
+	/// <param name="w">The w.</param>
+	/// <returns></returns>
+	inline Point3f OffsetRayOrigin(const Point3f& p, const Vector3f& pError,
 									const Normal3f &n, const Vector3f &w) {
 		Float d = Dot(Abs(n), pError);
 #ifdef PBRT_FLOAT_AS_DOUBLE
@@ -1662,6 +1670,9 @@ namespace pbrt {
 		if (Dot(w, n) < 0) offset = -offset;
 		Point3f po = p + offset;
 		// Round offset point _po_ away from _p_
+		// advancing each coordinate of the computed point one 
+		// floating-point value away from p ensures that it is outside of
+		// the error box
 		for (int i = 0; i < 3; ++i) {
 			if (offset[i] > 0)
 				po[i] = NextFloatUp(po[i]);

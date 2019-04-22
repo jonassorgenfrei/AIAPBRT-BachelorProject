@@ -277,7 +277,7 @@ SET ( PBRT_CORE_SOURCE
   src/core/api.cpp
 #  src/core/bssrdf.cpp
 #  src/core/camera.cpp
-#  src/core/efloat.cpp
+  src/core/efloat.cpp
   src/core/error.cpp
   src/core/fileutil.cpp
 #  src/core/film.cpp
@@ -304,8 +304,8 @@ SET ( PBRT_CORE_SOURCE
 #  src/core/reflection.cpp
 #  src/core/sampler.cpp
 #  src/core/sampling.cpp
-#  src/core/scene.cpp
-#  src/core/shape.cpp
+  src/core/scene.cpp
+  src/core/shape.cpp
 #  src/core/sobolmatrices.cpp
 #  src/core/spectrum.cpp
   src/core/stats.cpp
@@ -317,7 +317,7 @@ SET ( PBRT_CORE_HEADERS
   src/core/api.h
 #  src/core/bssrdf.h
 #  src/core/camera.h
-#  src/core/efloat.h
+  src/core/efloat.h
   src/core/error.h
   src/core/fileutil.h
 #  src/core/film.h
@@ -346,8 +346,8 @@ SET ( PBRT_CORE_HEADERS
   src/core/rng.h
 #  src/core/sampler.h
 #  src/core/sampling.h
-#  src/core/scene.h
-#  src/core/shape.h
+  src/core/scene.h
+  src/core/shape.h
 #  src/core/sobolmatrices.h
 #  src/core/spectrum.h
   src/core/stats.h

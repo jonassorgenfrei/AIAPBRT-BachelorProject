@@ -73,7 +73,7 @@ namespace pbrt {
 		Normal3f dndu(0, 0, 0), dndv(0, 0, 0);
 
 		// Refine disk intersection point
-		pHit.z = height;
+		pHit.z = height;	// set the z coordinate of the point to lie on the plane of the disk 
 
 		// Compute error bounds for disk intersection
 		Vector3f pError(0, 0, 0);

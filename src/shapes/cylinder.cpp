@@ -73,6 +73,7 @@ namespace pbrt {
 		pHit = ray((Float)tShapeHit);
 
 		// Refine cylinder intersection point
+		// by reprojecting the x and y coordinantes 
 		Float hitRad = std::sqrt(pHit.x * pHit.x + pHit.y * pHit.y);
 		pHit.x *= radius / hitRad;
 		pHit.y *= radius / hitRad;
@@ -126,7 +127,7 @@ namespace pbrt {
 			(f * F - g * E) * invEGF2 * dpdv);
 
 		// Compute error bounds for cylinder intersection
-		Vector3f pError = gamma(3) * Abs(Vector3f(pHit.x, pHit.y, 0));
+		Vector3f pError = gamma(3) * Abs(Vector3f(pHit.x, pHit.y, 0));	// gamma 3
 
 		// Initialize _SurfaceInteraction_ from parametric information
 		*isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),

@@ -61,16 +61,34 @@ namespace pbrt {
 		///   <c>true</c> if [is surface interaction]; otherwise, <c>false</c>.
 		/// </returns>
 		bool IsSurfaceInteraction() const { return n != Normal3f(); }
-		Ray SpawnRay(const Vector3f &d) const {
-			Point3f o = OffsetRayOrigin(p, pError, n, d);
+		/// <summary>
+		/// Generate rays leaving intersection points
+		/// </summary>
+		/// <param name="d">The d.</param>
+		/// <returns></returns>
+		Ray SpawnRay(const Vector3f& d) const {
+			Point3f o = OffsetRayOrigin(p, pError, n, d); 
 			return Ray(o, d, Infinity, time, GetMedium(d));
 		}
-		Ray SpawnRayTo(const Point3f &p2) const {
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="p2">Point</param>
+		/// <returns></returns>
+		Ray SpawnRayTo(const Point3f& p2) const {
 			Point3f origin = OffsetRayOrigin(p, pError, n, p2 - p);
 			Vector3f d = p2 - p;
+			// set the tMax value of shadow rays to be just under one
+			// so they stop before the surface of light sources
 			return Ray(origin, d, 1 - ShadowEpsilon, time, GetMedium(d));
 		}
-		Ray SpawnRayTo(const Interaction &it) const {
+
+		/// <summary>
+		/// Spawns the ray to.
+		/// </summary>
+		/// <param name="it">Interaction</param>
+		/// <returns></returns>
+		Ray SpawnRayTo(const Interaction& it) const {
 			Point3f origin = OffsetRayOrigin(p, pError, n, it.p - p);
 			Point3f target = OffsetRayOrigin(it.p, it.pError, it.n, origin - it.p);
 			Vector3f d = target - origin;

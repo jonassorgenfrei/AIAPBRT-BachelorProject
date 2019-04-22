@@ -36,8 +36,15 @@
 #include "stringprint.h"
 
 namespace pbrt {
-
 	// EFloat Declarations
+	/// <summary>
+	/// Running Error analysis 
+	/// Acts like a regular float but uses operator overloading, 
+	/// to provide all of the regular arithmetic operations on floats while computing
+	/// error bounds.
+	/// Keeps track of an interval that describes the unvertainty of a value arise due to
+	/// errors in intermediate floating-point arithmetic rather than unvertainty of the input parameters.
+	/// </summary>
 	class EFloat {
 	public:
 		// EFloat Public Methods
@@ -197,13 +204,24 @@ namespace pbrt {
 
 	private:
 		// EFloat Private Data
-		float v, low, high;
+		float v,		// computed (floating point) value v
+			low, high;	// error bounds  (error = high - low)
 #ifndef NDEBUG
-		long double vPrecise;
+		long double vPrecise;	// highly precised version of v, for reference
 #endif  // NDEBUG
 		friend inline EFloat sqrt(EFloat fe);
 		friend inline EFloat abs(EFloat fe);
-		friend inline bool Quadratic(EFloat A, EFloat B, EFloat C, EFloat * t0,
+
+		/// <summary>
+		/// Operates on coefficients that may have error.
+		/// </summary>
+		/// <param name="A">a.</param>
+		/// <param name="B">The b.</param>
+		/// <param name="C">The c.</param>
+		/// <param name="t0">The t0 values.</param>
+		/// <param name="t1">The t1 values.</param>
+		/// <returns>Returns the error bounds</returns>
+		friend inline bool Quadratic(EFloat A, EFloat B, EFloat C, EFloat* t0,
 			EFloat * t1);
 	};
 
