@@ -38,6 +38,7 @@ namespace pbrt {
 	Primitive::~Primitive() {}
 
 	const AreaLight* Aggregate::GetAreaLight() const {
+		// NOTE: SHOULD NEVER BE CALLED! 
 		LOG(FATAL) <<
 			"Aggregate::GetAreaLight() method"
 			"called; should have gone to GeometricPrimitive";
@@ -45,6 +46,7 @@ namespace pbrt {
 	}
 
 	const Material* Aggregate::GetMaterial() const {
+		// NOTE: SHOULD NEVER BE CALLED! 
 		LOG(FATAL) <<
 			"Aggregate::GetMaterial() method"
 			"called; should have gone to GeometricPrimitive";
@@ -52,9 +54,10 @@ namespace pbrt {
 	}
 
 	void Aggregate::ComputeScatteringFunctions(SurfaceInteraction* isect,
-		MemoryArena& arena,
-		TransportMode mode,
-		bool allowMultipleLobes) const {
+												MemoryArena& arena,
+												TransportMode mode,
+												bool allowMultipleLobes) const {
+		// NOTE: SHOULD NEVER BE CALLED! 
 		LOG(FATAL) <<
 			"Aggregate::ComputeScatteringFunctions() method"
 			"called; should have gone to GeometricPrimitive";
@@ -68,17 +71,24 @@ namespace pbrt {
 	}
 
 	bool TransformedPrimitive::Intersect(const Ray& r,
-		SurfaceInteraction* isect) const {
+										SurfaceInteraction* isect) const {
 		// Compute _ray_ after transformation by _PrimitiveToWorld_
 		Transform InterpolatedPrimToWorld;
-		PrimitiveToWorld.Interpolate(r.time, &InterpolatedPrimToWorld);
-		Ray ray = Inverse(InterpolatedPrimToWorld)(r);
-		if (!primitive->Intersect(ray, isect)) return false;
-		r.tMax = ray.tMax;
+		PrimitiveToWorld.Interpolate(r.time, &InterpolatedPrimToWorld); // interpolate the transformation based on the ray's time
+		
+		// NOTE: Interpolating and then inverting it doesn't necessarily give the same result
+		// as interpolating its inverse
+		Ray ray = Inverse(InterpolatedPrimToWorld)(r);	// ray in primitive's coordinate system
+		if (!primitive->Intersect(ray, isect)) 
+			return false;	// return false if no intersection found
+		
+		r.tMax = ray.tMax;	// if intersection copy tMax in ray
+
 		// Transform instance's intersection data to world space
 		if (!InterpolatedPrimToWorld.IsIdentity())
-			* isect = InterpolatedPrimToWorld(*isect);
+			* isect = InterpolatedPrimToWorld(*isect)	
 		CHECK_GE(Dot(isect->n, isect->shading.n), 0);
+		
 		return true;
 	}
 

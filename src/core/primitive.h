@@ -208,27 +208,95 @@ namespace pbrt {
 
 	// TransformedPrimitive Declarations
 	/// <summary>
-	/// Holds a single Primitivve and also includes an AnimatedTransform that is injected in between the underlying 
-	/// primitive and its representation in the scene.
+	/// Holds a single Primitivve and also includes an AnimatedTransform that is injected in
+	/// between the  underlying primitive and its representation in the scene.
+	/// Keytask:bridge the Primitive interface that it implements and the Primitive that it holds
+	///  a pointer to.
 	/// THIS ENABLES: object instancing and primitives with animated transformations.
 	/// </summary>
 	/// <seealso cref="Primitive" />
 	class TransformedPrimitive : public Primitive {
 	public:
 		// TransformedPrimitive Public Methods
-		TransformedPrimitive(std::shared_ptr<Primitive>& primitive,
-			const AnimatedTransform& PrimitiveToWorld);
+
+		/// <summary>
+		/// Constructor 
+		/// Initializes a new instance of the <see cref="TransformedPrimitive"/> class.
+		/// </summary>
+		/// <param name="primitive">Reference to the primitive that represents the model.</param>
+		/// <param name="PrimitiveToWorld">Transfomration that places the model in the scene.</param>
+		TransformedPrimitive(	std::shared_ptr<Primitive>& primitive,
+								const AnimatedTransform& PrimitiveToWorld);
+
+
+		/// <summary>
+		/// Intersection Test for a ray and a surface.
+		/// Updates Ray::tMax with this value if an intersection is found.
+		/// It is also responsible for initializing additional SurfaceInteraction member variables, including
+		/// a pointer to the  Primtive the ray hit.
+		/// </summary>
+		/// <param name="r">Ray</param>
+		/// <param name="">Surfaceinteraction</param>
+		/// <returns>True if intersection is found.</returns>
 		bool Intersect(const Ray& r, SurfaceInteraction* in) const;
+
+		/// <summary>
+		/// Intersection Test for a ray.
+		/// Updates Ray::tMax with this value if an intersection is found.
+		/// </summary>
+		/// <param name="r">Ray</param>
+		/// <returns>
+		/// True if intersection is found.
+		/// </returns>
 		bool IntersectP(const Ray& r) const;
-		const AreaLight* GetAreaLight() const { return nullptr; }
-		const Material* GetMaterial() const { return nullptr; }
+
+		/// <summary>
+		/// Gets the area light.
+		/// If the primitive is not emissive, this method should return a nullptr.
+		/// </summary>
+		/// <returns>
+		/// Pointer to the AreaLight that describes the primitive's emission destribution, if the primitive is itself a light source.
+		/// </returns>
+		const AreaLight* GetAreaLight() const { 	// NOTE: SHOULD NEVER BE CALLED!  
+			return nullptr; }
+
+		/// <summary>
+		/// Gets the material.
+		/// If nullptr is returned, ray intersections with the primtive should be ignored.
+		/// The primitive only serves to delineate a volume of space for participating media.
+		/// This method is also used to check if 2 rays have intersected the same object by comparing their Material pointers.
+		/// </summary>
+		/// <returns>
+		/// Pointer to the material instance assigned to the primitive
+		/// </returns>
+		const Material* GetMaterial() const { 	// NOTE: SHOULD NEVER BE CALLED! 
+			return nullptr; }
+
+		/// <summary>
+		/// Initializes representations of the light-scattering properties of the material at the intersection point on the surface.
+		/// The BSDF object describes local light-scattering properties at the intersection point.
+		/// If applicable, this method also initalizes a BSSRDF, which describes subsurface scattering inside the primitive - light
+		/// that enters the surface at points far from where it exits.
+		/// </summary>
+		/// <param name="isect">The isect.</param>
+		/// <param name="arena">MemoryArena to allocate memory for the BSDF/BSSRDF.</param>
+		/// <param name="mode">Transport enumerant that indicates whether the ray path that found this intersection point started from the camera or a light source.</param>
+		/// <param name="allowMultipleLobes">if set to <c>true</c> allow multiple lobes and controls a detail of how some types of BRDF's are represented.</param>
 		void ComputeScatteringFunctions(SurfaceInteraction* isect,
 			MemoryArena& arena, TransportMode mode,
 			bool allowMultipleLobes) const {
+			// NOTE: SHOULD NEVER BE CALLED! 
 			LOG(FATAL) <<
 				"TransformedPrimitive::ComputeScatteringFunctions() shouldn't be "
 				"called";
 		}
+
+		/// <summary>
+		/// Returns a box that encloses the primitive's geometry in world space.
+		/// </summary>
+		/// <returns>
+		/// Box that encloses the primitive's geometry in world space.
+		/// </returns>
 		Bounds3f WorldBound() const {
 			return PrimitiveToWorld.MotionBounds(primitive->WorldBound());
 		}
@@ -236,18 +304,25 @@ namespace pbrt {
 	private:
 		// TransformedPrimitive Private Data
 		std::shared_ptr<Primitive> primitive;
+		// defines the transformation from the coordinate system of this particular 
+		// instance of the geometry to world space.
 		const AnimatedTransform PrimitiveToWorld;
 	};
 
 	// Aggregate Declarations
+	/// <summary>
+	/// Provides an interface for grouping multiple Primitive objects together.
+	/// For different acceleration techniques.
+	/// </summary>
+	/// <seealso cref="Primitive" />
 	class Aggregate : public Primitive {
 	public:
 		// Aggregate Public Methods
 		const AreaLight* GetAreaLight() const;
 		const Material* GetMaterial() const;
 		void ComputeScatteringFunctions(SurfaceInteraction* isect,
-			MemoryArena& arena, TransportMode mode,
-			bool allowMultipleLobes) const;
+										MemoryArena& arena, TransportMode mode,
+										bool allowMultipleLobes) const;
 	};
 
 }  // namespace pbrt
