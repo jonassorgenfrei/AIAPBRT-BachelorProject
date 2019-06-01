@@ -296,9 +296,9 @@ SET ( PBRT_CORE_SOURCE
 #  src/core/memory.cpp
 #  src/core/microfacet.cpp
   src/core/parallel.cpp
-#  src/core/paramset.cpp
+  src/core/paramset.cpp
   src/core/parser.cpp
-#  src/core/primitive.cpp
+  src/core/primitive.cpp
   src/core/progressreporter.cpp
   src/core/quaternion.cpp
 #  src/core/reflection.cpp
@@ -336,10 +336,10 @@ SET ( PBRT_CORE_HEADERS
 #  src/core/microfacet.h
 #  src/core/mipmap.h
   src/core/parallel.h
-#  src/core/paramset.h
+  src/core/paramset.h
   src/core/parser.h
   src/core/pbrt.h
-#  src/core/primitive.h
+  src/core/primitive.h
   src/core/progressreporter.h
   src/core/quaternion.h
 #  src/core/reflection.h
