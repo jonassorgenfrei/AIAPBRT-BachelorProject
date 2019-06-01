@@ -188,9 +188,13 @@ namespace pbrt {
 			} shading; // some parts of the system use this shading geometry, 
 			// while others need to work with the original quantities
 
+			// Pointer to the Primitive that the ray hit
 			const Primitive *primitive = nullptr;
+
+			// BSDF and BSSRDF pointers for the point are stored in the SurfaceInteraction
 			BSDF *bsdf = nullptr;
 			BSSRDF *bssrdf = nullptr;
+
 			mutable Vector3f dpdx, dpdy;
 			mutable Float dudx = 0, dvdx = 0, dudy = 0, dvdy = 0;
 
