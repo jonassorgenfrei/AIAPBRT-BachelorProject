@@ -47,6 +47,10 @@ namespace pbrt {
 	/// Structure to store information about Primitive in the BVH
 	/// </summary>
 	struct BVHPrimitiveInfo;
+
+	/// <summary>
+	/// Struct for a Morton Code
+	/// </summary>
 	struct MortonPrimitive;
 	struct LinearBVHNode;
 
@@ -132,6 +136,12 @@ namespace pbrt {
 		
 		/// <summary>
 		/// Builds the tree using HLBVH Algorithm.
+		/// Morton-curve-based clustering is used to first build trees for the lower levels
+		/// of the hierarchy ("treelets") and the top levels of the tree are then created
+		/// using the surface area heuristic.
+		/// Tree construction time is linear in the number of primitives.
+		/// Based on Morton codes, which map nearby points in n dimensions to nearby
+		/// points along the 1D line.
 		/// </summary>
 		/// <param name="arena">The memory area for memory management.</param>
 		/// <param name="primitiveInfo">The primitive information.</param>
@@ -144,22 +154,50 @@ namespace pbrt {
 			std::vector<std::shared_ptr<Primitive>>& orderedPrims) const;
 
 
+		/// <summary>
+		/// Emits the LBVH.
+		/// </summary>
+		/// <param name="buildNodes">The build nodes.</param>
+		/// <param name="primitiveInfo">The primitive information.</param>
+		/// <param name="mortonPrims">The morton prims.</param>
+		/// <param name="nPrimitives">The n primitives.</param>
+		/// <param name="totalNodes">The total nodes.</param>
+		/// <param name="orderedPrims">The ordered prims.</param>
+		/// <param name="orderedPrimsOffset">The ordered prims offset.</param>
+		/// <param name="bitIndex">Index of the bit.</param>
+		/// <returns></returns>
 		BVHBuildNode* emitLBVH(
 			BVHBuildNode*& buildNodes,
 			const std::vector<BVHPrimitiveInfo>& primitiveInfo,
 			MortonPrimitive* mortonPrims, int nPrimitives, int* totalNodes,
 			std::vector<std::shared_ptr<Primitive>>& orderedPrims,
 			std::atomic<int>* orderedPrimsOffset, int bitIndex) const;
+
+		/// <summary>
+		/// Builds the upper sah.
+		/// </summary>
+		/// <param name="arena">The arena.</param>
+		/// <param name="treeletRoots">The treelet roots.</param>
+		/// <param name="start">The start.</param>
+		/// <param name="end">The end.</param>
+		/// <param name="totalNodes">The total nodes.</param>
+		/// <returns></returns>
 		BVHBuildNode* buildUpperSAH(MemoryArena& arena,
 			std::vector<BVHBuildNode*>& treeletRoots,
 			int start, int end, int* totalNodes) const;
 		
+		/// <summary>
+		/// Flattens the BVH tree.
+		/// </summary>
+		/// <param name="node">The node.</param>
+		/// <param name="offset">The offset.</param>
+		/// <returns></returns>
 		int flattenBVHTree(BVHBuildNode* node, int* offset);
 
 		// BVHAccel Private Data
 		const int maxPrimsInNode;		// The maximum number of primitives in any leaf node
-		const SplitMethod splitMethod;	//
-		std::vector<std::shared_ptr<Primitive>> primitives;
+		const SplitMethod splitMethod;	// Algorithm for splitting the scene
+		std::vector<std::shared_ptr<Primitive>> primitives;	// vector of all Primitivies in the scene
 		LinearBVHNode* nodes = nullptr;
 	};
 
