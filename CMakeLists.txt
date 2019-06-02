@@ -328,11 +328,11 @@ SET ( PBRT_CORE_HEADERS
   src/core/integrator.h
   src/core/interaction.h
 #  src/core/interpolation.h
-#  src/core/light.h
-#  src/core/lowdiscrepancy.h
-#  src/core/material.h
-#  src/core/medium.h
-#  src/core/memory.h
+  src/core/light.h
+  src/core/lowdiscrepancy.h
+  src/core/material.h
+  src/core/medium.h
+  src/core/memory.h
 #  src/core/microfacet.h
 #  src/core/mipmap.h
   src/core/parallel.h
@@ -345,14 +345,14 @@ SET ( PBRT_CORE_HEADERS
 #  src/core/reflection.h
   src/core/rng.h
 #  src/core/sampler.h
-#  src/core/sampling.h
+  src/core/sampling.h
   src/core/scene.h
   src/core/shape.h
-#  src/core/sobolmatrices.h
-#  src/core/spectrum.h
+  src/core/sobolmatrices.h
+  src/core/spectrum.h
   src/core/stats.h
   src/core/stringprint.h
-#  src/core/texture.h
+  src/core/texture.h
   src/core/transform.h
   )
 

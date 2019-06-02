@@ -22,17 +22,28 @@
 	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- // core/api.cpp*
-#include "api.h"
-#include "parallel.h"
-#include "paramset.h"
-#include "spectrum.h"
-#include "scene.h"
-//#include "film.h"
-#include "medium.h"
-#include "stats.h"
+
+#if defined(_MSC_VER)
+#define NOMINMAX
+#pragma once
+#endif
+
+#ifndef PBRT_CORE_SOBOLMATRICES_H
+#define PBRT_CORE_SOBOLMATRICES_H
+
+ // core/sobolmatrices.h*
+#include "pbrt.h"
 
 namespace pbrt {
-	// API Global Variables
-	Options PbrtOptions;
-} // namespace pbrts
+
+	// Sobol Matrix Declarations
+	static PBRT_CONSTEXPR int NumSobolDimensions = 1024;
+	static PBRT_CONSTEXPR int SobolMatrixSize = 52;
+	extern const uint32_t SobolMatrices32[NumSobolDimensions * SobolMatrixSize];
+	extern const uint64_t SobolMatrices64[NumSobolDimensions * SobolMatrixSize];
+	extern const uint64_t VdCSobolMatrices[][SobolMatrixSize];
+	extern const uint64_t VdCSobolMatricesInv[][SobolMatrixSize];
+
+}  // namespace pbrt
+
+#endif // PBRT_CORE_SOBOLMATRICES_H

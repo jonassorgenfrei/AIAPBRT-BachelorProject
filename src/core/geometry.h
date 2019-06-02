@@ -54,10 +54,9 @@ namespace pbrt {
 		public:
 			// Vector2 Public Methods
 			Vector2() { x = y = 0; }
-			Vector2(T xx, T yy)
-				: x(xx), y(yy) {
-				DCHECK(!v.HasNaNs());
-			}
+			Vector2(T xx, T yy) 
+				: x(xx), y(yy) 
+			{ DCHECK(!HasNaNs()); }
 			bool HasNaNs() const { return isNaN(x) || isNaN(y); }
 			explicit Vector2(const Point2<T> &p);
 			explicit Vector2(const Point3<T> &p);

@@ -293,6 +293,7 @@ namespace pbrt {
 			/// <param name="si">The Surface Interaction.</param>
 			/// <returns>Transformed Surface Interaction.</returns>
 			SurfaceInteraction operator()(const SurfaceInteraction &si) const;
+
 			template <typename T>
 			inline Point3<T> operator()(const Point3<T> &pt,
 										Vector3<T> *absError) const;
@@ -346,10 +347,10 @@ namespace pbrt {
 	// ----------------------
 	Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up);
 	
-	/*Transform Orthographic(Float znear, Float zfar);
+	Transform Orthographic(Float znear, Float zfar);
 	Transform Perspective(Float fov, Float znear, Float zfar);
 	bool SolveLinearSystem2x2(const Float A[2][2], const Float B[2], Float *x0,
-		Float *x1);*/
+		Float *x1);
 
 	// Transform Inline Functions	
 

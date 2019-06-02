@@ -38,7 +38,7 @@ namespace pbrt {
 	static std::vector<std::thread> threads;
 	static bool shutdownThreads = false;
 	class ParallelForLoop;
-	static ParallelForLoop *workList = nullptr;
+	static ParallelForLoop* workList = nullptr;
 	static std::mutex workListMutex;
 
 	// Bookkeeping variables to help with the implementation of
@@ -60,10 +60,10 @@ namespace pbrt {
 			maxIndex(maxIndex),
 			chunkSize(chunkSize),
 			profilerState(profilerState) {}
-		ParallelForLoop(const std::function<void(Point2i)> &f, const Point2i &count,
+		ParallelForLoop(const std::function<void(Point2i)>& f, const Point2i& count,
 			uint64_t profilerState)
 			: func2D(f),
-			maxIndex(count.x * count.y),
+			maxIndex(count.x* count.y),
 			chunkSize(1),
 			profilerState(profilerState) {
 			nX = count.x;
@@ -78,7 +78,7 @@ namespace pbrt {
 		uint64_t profilerState;
 		int64_t nextIndex = 0;
 		int activeWorkers = 0;
-		ParallelForLoop *next = nullptr;
+		ParallelForLoop* next = nullptr;
 		int nX = -1;
 
 		// ParallelForLoop Private Methods
@@ -136,7 +136,7 @@ namespace pbrt {
 			}
 			else {
 				// Get work from _workList_ and run loop iterations
-				ParallelForLoop &loop = *workList;
+				ParallelForLoop& loop = *workList;
 
 				// Run a chunk of loop iterations for _loop_
 
@@ -239,7 +239,7 @@ namespace pbrt {
 		return PbrtOptions.nThreads == 0 ? NumSystemCores() : PbrtOptions.nThreads;
 	}
 
-	void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
+	void ParallelFor2D(std::function<void(Point2i)> func, const Point2i & count) {
 		CHECK(threads.size() > 0 || MaxThreadIndex() == 1);
 
 		if (threads.empty() || count.x * count.y <= 1) {
@@ -325,7 +325,7 @@ namespace pbrt {
 			workListCondition.notify_all();
 		}
 
-		for (std::thread &thread : threads) thread.join();
+		for (std::thread& thread : threads) thread.join();
 		threads.erase(threads.begin(), threads.end());
 		shutdownThreads = false;
 	}

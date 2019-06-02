@@ -31,9 +31,8 @@
 #ifndef PBRT_CORE_PBRT_H
 #define PBRT_CORE_PBRT_H
 
-// core/pbrt.h*
-// Included by all other files in the system.
-// Global Include Files
+ // core/pbrt.h*
+ // Global Include Files
 #include <type_traits>
 #include <algorithm>
 #include <cinttypes>
@@ -43,7 +42,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "error.h" // TODO:
+#include "error.h"
 #ifdef PBRT_HAVE_MALLOC_H
 #include <malloc.h>  // for _alloca, memalign
 #endif
@@ -60,14 +59,14 @@
 #endif
 
 #if defined(_MSC_VER)
-	#define PBRT_IS_MSVC
-	#if _MSC_VER == 1800
-		#define snprintf _snprintf
-	#endif
+#define PBRT_IS_MSVC
+#if _MSC_VER == 1800
+#define snprintf _snprintf
+#endif
 #endif
 
 #ifndef PBRT_L1_CACHE_LINE_SIZE
-	#define PBRT_L1_CACHE_LINE_SIZE 64
+#define PBRT_L1_CACHE_LINE_SIZE 64
 #endif
 
 #include <stdint.h>
@@ -84,10 +83,8 @@
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
 
-/// <summary>
-/// 
-/// </summary>
 namespace pbrt {
+
 	// Global Forward Declarations
 	class Scene;
 	class Integrator;
@@ -151,9 +148,9 @@ namespace pbrt {
 	struct Distribution1D;
 	class Distribution2D;
 #ifdef PBRT_FLOAT_AS_DOUBLE
-	typedef double Float;		// 64-bit 
+	typedef double Float;
 #else
-	typedef float Float;		// 32-bit
+	typedef float Float;
 #endif  // PBRT_FLOAT_AS_DOUBLE
 	class RNG;
 	class ProgressReporter;

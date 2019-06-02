@@ -25,7 +25,7 @@
 
 
  // core/primitive.cpp*
-#include "primitiv.h"
+#include "primitive.h"
 #include "light.h"
 #include "interaction.h"
 #include "stats.h"
@@ -86,9 +86,8 @@ namespace pbrt {
 
 		// Transform instance's intersection data to world space
 		if (!InterpolatedPrimToWorld.IsIdentity())
-			* isect = InterpolatedPrimToWorld(*isect)	
+			* isect = InterpolatedPrimToWorld(*isect);
 		CHECK_GE(Dot(isect->n, isect->shading.n), 0);
-		
 		return true;
 	}
 

@@ -35,8 +35,8 @@
 #include "pbrt.h"
 #include "geometry.h"
 #include "transform.h"
-//#include "medium.h"
-//#include "material.h"
+#include "medium.h"
+#include "material.h"
 
 namespace pbrt {
 	// Interaction Declarations

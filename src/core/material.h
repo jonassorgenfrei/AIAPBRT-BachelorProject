@@ -22,17 +22,37 @@
 	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- // core/api.cpp*
-#include "api.h"
-#include "parallel.h"
-#include "paramset.h"
-#include "spectrum.h"
-#include "scene.h"
-//#include "film.h"
-#include "medium.h"
-#include "stats.h"
+
+#if defined(_MSC_VER)
+#define NOMINMAX
+#pragma once
+#endif
+
+#ifndef PBRT_CORE_MATERIAL_H
+#define PBRT_CORE_MATERIAL_H
+
+ // core/material.h*
+#include "pbrt.h"
+#include "memory.h"
 
 namespace pbrt {
-	// API Global Variables
-	Options PbrtOptions;
-} // namespace pbrts
+
+	// TransportMode Declarations
+	enum class TransportMode { Radiance, Importance };
+
+	// Material Declarations
+	class Material {
+	public:
+		// Material Interface
+		virtual void ComputeScatteringFunctions(SurfaceInteraction* si,
+			MemoryArena& arena,
+			TransportMode mode,
+			bool allowMultipleLobes) const = 0;
+		virtual ~Material();
+		static void Bump(const std::shared_ptr<Texture<Float>>& d,
+			SurfaceInteraction* si);
+	};
+
+}  // namespace pbrt
+
+#endif // PBRT_CORE_MATERIAL_H

@@ -1,3 +1,4 @@
+
 #include "tests/gtest/gtest.h"
 #include <cmath>
 #include <functional>
@@ -317,7 +318,7 @@ TEST(Triangle, SolidAngle) {
 
 // Use Quasi Monte Carlo with uniform sphere sampling to esimate the solid
 // angle subtended by the given shape from the given point.
-static Float mcSolidAngle(const Point3f & p, const Shape & shape, int nSamples) {
+static Float mcSolidAngle(const Point3f& p, const Shape& shape, int nSamples) {
 	int nHits = 0;
 	for (int i = 0; i < nSamples; ++i) {
 		Point2f u{ RadicalInverse(0, i), RadicalInverse(1, i) };
@@ -372,7 +373,7 @@ TEST(Disk, SolidAngle) {
 // such that if the dot product of an outgoing ray and the surface normal
 // at a point is positive, then a ray leaving that point in that direction
 // should never intersect the shape.
-static void TestReintersectConvex(Shape & shape, RNG & rng) {
+static void TestReintersectConvex(Shape& shape, RNG& rng) {
 	// Ray origin
 	Point3f o;
 	for (int c = 0; c < 3; ++c) o[c] = pExp(rng);

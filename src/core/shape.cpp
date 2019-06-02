@@ -27,7 +27,7 @@
  // core/shape.cpp*
 #include "shape.h"
 #include "stats.h"
-//#include "lowdiscrepancy.h"
+#include "lowdiscrepancy.h"
 
 namespace pbrt {
 

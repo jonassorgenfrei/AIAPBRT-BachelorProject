@@ -28,7 +28,7 @@
 #include "../core/pbrt.h"
 #include "api.h" // TODO:
 #include "parser.h"
- #include "parallel.h" // TODO:s
+#include "parallel.h" // TODO:s
 #include <glog/logging.h>
 
 using namespace pbrt;

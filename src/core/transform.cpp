@@ -338,7 +338,7 @@ namespace pbrt {
 		ret.faceIndex = si.faceIndex;
 		return ret;
 	}
-	/*
+	
 	Transform Orthographic(Float zNear, Float zFar) {
 		return Scale(1, 1, 1 / (zFar - zNear)) * Translate(Vector3f(0, 0, -zNear));
 	}
@@ -352,8 +352,7 @@ namespace pbrt {
 		Float invTanAng = 1 / std::tan(Radians(fov) / 2);
 		return Scale(invTanAng, invTanAng, 1) * Transform(persp);
 	}
-	*/
-
+	
 	// Interval Definitions
 	// represents intervals of real numbers.
 	class Interval {

@@ -26,9 +26,9 @@
  // core/interaction.cpp*
 #include "interaction.h"
 #include "transform.h"
-//#include "primitive.h"
-//#include "shape.h"
-//#include "light.h"
+#include "primitive.h"
+#include "shape.h"
+#include "light.h"
 
 namespace pbrt {
 

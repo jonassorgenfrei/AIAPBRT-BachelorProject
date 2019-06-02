@@ -770,76 +770,94 @@ namespace pbrt {
 	BVHAccel::~BVHAccel() { FreeAligned(nodes); }
 
 	bool BVHAccel::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
-		if (!nodes) return false;
+
+		if (!nodes)			// return false if nodes are empty
+			return false;
+		
 		ProfilePhase p(Prof::AccelIntersect);
 		bool hit = false;
+		// precompute some values related to the ray that will be used repeatedly
 		Vector3f invDir(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);
 		int dirIsNeg[3] = { invDir.x < 0, invDir.y < 0, invDir.z < 0 };
-		// Follow ray through BVH nodes to find primitive intersections
-		int toVisitOffset = 0, currentNodeIndex = 0;
-		int nodesToVisit[64];
+
+		int toVisitOffset = 0,		// offset to the next free element in the nodesToVisit Stack
+			currentNodeIndex = 0;	// holds the offset into the nodes array of the node to be visited
+		int nodesToVisit[64];		// nodes that still need to be visited	(like a stack)
+
+		// Follow ray through BVH nodes to find primitive intersections	
 		while (true) {
-			const LinearBVHNode* node = &nodes[currentNodeIndex];
+			const LinearBVHNode* node = &nodes[currentNodeIndex];	// current node
 			// Check ray against BVH node
-			if (node->bounds.IntersectP(ray, invDir, dirIsNeg)) {
-				if (node->nPrimitives > 0) {
+			if (node->bounds.IntersectP(ray, invDir, dirIsNeg)) {	// check if the ray intersects the node's bounding box (or starts inside of it)
+				if (node->nPrimitives > 0) {	// leaf node
 					// Intersect ray with primitives in leaf BVH node
 					for (int i = 0; i < node->nPrimitives; ++i)
-						if (primitives[node->primitivesOffset + i]->Intersect(
-							ray, isect))
-							hit = true;
-					if (toVisitOffset == 0) break;
-					currentNodeIndex = nodesToVisit[--toVisitOffset];
+						if (primitives[node->primitivesOffset + i]->Intersect(ray, isect))
+							hit = true;	// even if an intersection is found, the remaining nodes have to be visited in case one of them yields a closer intersection
+					if (toVisitOffset == 0) 
+						break;	// end if stack is empty
+					currentNodeIndex = nodesToVisit[--toVisitOffset];	// pop node from stack
 				}
-				else {
+				else {	// interior node
 					// Put far BVH node on _nodesToVisit_ stack, advance to near
-					// node
-					if (dirIsNeg[node->axis]) {
+					// node; Using the sign of the ray's direction vector for the coordinate axis along which primitives were partitioned for the current node 
+					if (dirIsNeg[node->axis]) {		// if sign is negativ: visit 2nd child first; since the primitives that went into the second child's subtree were on the upper side of the partition points
 						nodesToVisit[toVisitOffset++] = currentNodeIndex + 1;
 						currentNodeIndex = node->secondChildOffset;
-					}
-					else {
+					} else {	// if sign is positiv: visit 1st child first
 						nodesToVisit[toVisitOffset++] = node->secondChildOffset;
-						currentNodeIndex = currentNodeIndex + 1;
+						currentNodeIndex = currentNodeIndex + 1;		// depth-first layout: first child is immediately after the current node
 					}
 				}
 			}
-			else {
-				if (toVisitOffset == 0) break;
-				currentNodeIndex = nodesToVisit[--toVisitOffset];
+			else {	// no intersection found
+				if (toVisitOffset == 0) break;	// end if stack is empty
+				currentNodeIndex = nodesToVisit[--toVisitOffset];	// pop node from stack
 			}
 		}
 		return hit;
 	}
 
 	bool BVHAccel::IntersectP(const Ray& ray) const {
-		if (!nodes) return false;
+
+		if (!nodes)			// return false if nodes are empty
+			return false;
+
 		ProfilePhase p(Prof::AccelIntersectP);
+
+		// precompute some values related to the ray that will be used repeatedly
 		Vector3f invDir(1.f / ray.d.x, 1.f / ray.d.y, 1.f / ray.d.z);
 		int dirIsNeg[3] = { invDir.x < 0, invDir.y < 0, invDir.z < 0 };
-		int nodesToVisit[64];
-		int toVisitOffset = 0, currentNodeIndex = 0;
+
+		int nodesToVisit[64];		// nodes that still need to be visited	(like a stack)
+		int toVisitOffset = 0,		// offset to the next free element in the nodesToVisit Stack
+			currentNodeIndex = 0;	// holds the offset into the nodes array of the node to be visited
+
+		// Follow ray through BVH nodes to find primitive intersections	
 		while (true) {
-			const LinearBVHNode* node = &nodes[currentNodeIndex];
-			if (node->bounds.IntersectP(ray, invDir, dirIsNeg)) {
+			const LinearBVHNode* node = &nodes[currentNodeIndex];		// current node
+
+			if (node->bounds.IntersectP(ray, invDir, dirIsNeg)) {	// check if the ray intersects the node's bounding box (or starts inside of it)
 				// Process BVH node _node_ for traversal
-				if (node->nPrimitives > 0) {
+				if (node->nPrimitives > 0) {	// leaf node
+					// Intersect ray with primitives in leaf BVH node
 					for (int i = 0; i < node->nPrimitives; ++i) {
-						if (primitives[node->primitivesOffset + i]->IntersectP(
-							ray)) {
-							return true;
+						if (primitives[node->primitivesOffset + i]->IntersectP(ray)) {
+							return true;	// traversal stops immediately when any intersection is founds
 						}
 					}
-					if (toVisitOffset == 0) break;
-					currentNodeIndex = nodesToVisit[--toVisitOffset];
+					if (toVisitOffset == 0) break;	// end if stack is empty
+					currentNodeIndex = nodesToVisit[--toVisitOffset];	// pop node from stack
 				}
-				else {
-					if (dirIsNeg[node->axis]) {
+				else {	// interior node
+					// Put far BVH node on _nodesToVisit_ stack, advance to near
+					// node; Using the sign of the ray's direction vector for the coordinate axis along which primitives were partitioned for the current node 
+					if (dirIsNeg[node->axis]) {		// if sign is negativ: visit 2nd child first; since the primitives that went into the second child's subtree were on the upper side of the partition points
 						/// second child first
 						nodesToVisit[toVisitOffset++] = currentNodeIndex + 1;
 						currentNodeIndex = node->secondChildOffset;
 					}
-					else {
+					else {	// no intersection found
 						nodesToVisit[toVisitOffset++] = node->secondChildOffset;
 						currentNodeIndex = currentNodeIndex + 1;
 					}
@@ -855,6 +873,7 @@ namespace pbrt {
 
 	std::shared_ptr<BVHAccel> CreateBVHAccelerator(
 		std::vector<std::shared_ptr<Primitive>> prims, const ParamSet& ps) {
+
 		std::string splitMethodName = ps.FindOneString("splitmethod", "sah");
 		BVHAccel::SplitMethod splitMethod;
 		if (splitMethodName == "sah")
