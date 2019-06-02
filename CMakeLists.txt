@@ -1,17 +1,13 @@
-# AI accelerated PBRT
-
 # TODO: many of the best practices described here
 # (https://www.slideshare.net/DanielPfeifer1/cmake-48475415) are violated
 # in this file. Would be nice to address some of these.
 
-# Minimum CMake Version
-cmake_minimum_required (VERSION 3.3)
+CMAKE_MINIMUM_REQUIRED ( VERSION 2.8.4 )
 
 # For sanitizers
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# Project Name
-project (AIAPBRT)
+PROJECT ( AIAPBRT )
 
 OPTION(PBRT_FLOAT_AS_DOUBLE "Use 64-bit floats" OFF)
 
@@ -60,7 +56,6 @@ if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib/doc")
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
 endif()
-
 
 FIND_PACKAGE ( Sanitizers )
 FIND_PACKAGE ( Threads )
@@ -118,7 +113,6 @@ CHECK_INCLUDE_FILES ( memory.h HAVE_MEMORY_H )
 IF ( HAVE_MEMORY_H )
   ADD_DEFINITIONS ( -D PBRT_HAVE_MEMORY_H )
 ENDIF ()
-
 
 ###########################################################################
 # Check for various C++11 features and set preprocessor variables or
@@ -231,6 +225,37 @@ ELSEIF ( HAVE_DECLSPEC_NOINLINE )
   ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec(noinline)" )
 ELSE ()
   ADD_DEFINITIONS ( -D PBRT_NOINLINE )
+ENDIF ()
+
+########################################
+# Aligned memory allocation
+
+CHECK_CXX_SOURCE_COMPILES ( "
+#include <malloc.h>
+int main() { void * ptr = _aligned_malloc(1024, 32); }
+" HAVE__ALIGNED_MALLOC )
+
+CHECK_CXX_SOURCE_COMPILES ( "
+#include <stdlib.h>
+int main() {
+  void *ptr;
+  posix_memalign(&ptr, 32, 1024);
+} " HAVE_POSIX_MEMALIGN )
+
+CHECK_CXX_SOURCE_COMPILES ( "
+#include <malloc.h>
+int main() {
+    void *ptr = memalign(32, 1024);
+} " HAVE_MEMALIGN )
+
+IF ( HAVE__ALIGNED_MALLOC )
+  ADD_DEFINITIONS ( -D PBRT_HAVE__ALIGNED_MALLOC )
+ELSEIF ( HAVE_POSIX_MEMALIGN )
+  ADD_DEFINITIONS ( -D PBRT_HAVE_POSIX_MEMALIGN )
+ELSEIF ( HAVE_MEMALIGN )
+  ADD_DEFINITIONS ( -D PBRTHAVE_MEMALIGN )
+ELSE ()
+  MESSAGE ( SEND_ERROR "Unable to find a way to allocate aligned memory" )
 ENDIF ()
 
 ########################################
@@ -463,7 +488,7 @@ ADD_LIBRARY ( pbrt STATIC
   ${PBRT_CORE_SOURCE}
   ${PBRT_CORE_HEADERS}
   ${PBRT_SOURCE}
-)
+  )
 ADD_SANITIZERS ( pbrt )
 
 # A non-exhaustive but pretty representative set..
@@ -548,4 +573,4 @@ INSTALL ( TARGETS
   pbrt
   DESTINATION
   lib
-)
+  )
