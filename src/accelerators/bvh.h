@@ -52,6 +52,9 @@ namespace pbrt {
 	/// Struct for a Morton Code
 	/// </summary>
 	struct MortonPrimitive;
+	/// <summary>
+	/// Struct for a Lineare BVH Node Structure. Stores information to traverse the BVH
+	/// </summary>
 	struct LinearBVHNode;
 
 	// BVHAccel Declarations
@@ -155,7 +158,9 @@ namespace pbrt {
 
 
 		/// <summary>
-		/// Emits the LBVH.
+		/// Takes primitives with centroids in some region of space and successively 
+		/// partitions them with splitting planes that divide the current region of space
+		/// into 2 halves along the center of the region along one of the 3 axes.
 		/// </summary>
 		/// <param name="buildNodes">The build nodes.</param>
 		/// <param name="primitiveInfo">The primitive information.</param>
@@ -163,8 +168,8 @@ namespace pbrt {
 		/// <param name="nPrimitives">The n primitives.</param>
 		/// <param name="totalNodes">The total nodes.</param>
 		/// <param name="orderedPrims">The ordered prims.</param>
-		/// <param name="orderedPrimsOffset">The ordered prims offset.</param>
-		/// <param name="bitIndex">Index of the bit.</param>
+		/// <param name="orderedPrimsOffset">The offset to the next available element in the orderedPrims array</param>
+		/// <param name="bitIndex">Index of the bit to split the primitives along the plane corresponding to</param>
 		/// <returns></returns>
 		BVHBuildNode* emitLBVH(
 			BVHBuildNode*& buildNodes,
@@ -174,31 +179,35 @@ namespace pbrt {
 			std::atomic<int>* orderedPrimsOffset, int bitIndex) const;
 
 		/// <summary>
-		/// Builds the upper sah.
+		/// Creates a BVH of all the treelets. 
+		/// Note: Since there are generally tens or hundreds of them (and in any case, no more than 4096[lower 12 bits]) this step takes very little time.
 		/// </summary>
-		/// <param name="arena">The arena.</param>
-		/// <param name="treeletRoots">The treelet roots.</param>
-		/// <param name="start">The start.</param>
-		/// <param name="end">The end.</param>
+		/// <param name="arena">The Memory Arena</param>
+		/// <param name="treeletRoots">The vector with the precomputed treelets</param>
+		/// <param name="start">The start of the subset Range.</param>
+		/// <param name="end">The end of the subset Range.</param>
 		/// <param name="totalNodes">The total nodes.</param>
-		/// <returns></returns>
+		/// <returns>The BVH</returns>
 		BVHBuildNode* buildUpperSAH(MemoryArena& arena,
 			std::vector<BVHBuildNode*>& treeletRoots,
 			int start, int end, int* totalNodes) const;
 		
 		/// <summary>
 		/// Flattens the BVH tree.
+		/// Flaten a BVH tree to be stored in a linear array in memory in depth-first order.
+		/// Each child of each interior node is immediately after the node in memory.
+		/// Only the offset to the second child of each interior node must be stored explicitly.
 		/// </summary>
-		/// <param name="node">The node.</param>
-		/// <param name="offset">The offset.</param>
-		/// <returns></returns>
+		/// <param name="node">The BVH root node.</param>
+		/// <param name="offset">The offset parameter, tracks current offset into the BVHAccel::nodes arrayy</param>
+		/// <returns>Offset to the new created Node</returns>
 		int flattenBVHTree(BVHBuildNode* node, int* offset);
 
 		// BVHAccel Private Data
 		const int maxPrimsInNode;		// The maximum number of primitives in any leaf node
 		const SplitMethod splitMethod;	// Algorithm for splitting the scene
 		std::vector<std::shared_ptr<Primitive>> primitives;	// vector of all Primitivies in the scene
-		LinearBVHNode* nodes = nullptr;
+		LinearBVHNode* nodes = nullptr;		// stored in a member variable so it can be freed in the BVHAccel destructor
 	};
 
 	std::shared_ptr<BVHAccel> CreateBVHAccelerator(

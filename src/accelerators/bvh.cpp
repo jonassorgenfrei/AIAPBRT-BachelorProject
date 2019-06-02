@@ -113,18 +113,18 @@ namespace pbrt {
 	struct LBVHTreelet {
 		int startIndex,				// index in the mortonPrims array of the first primitive in the cluster 
 			nPrimitives;			// number of following primitives
-		BVHBuildNode* buildNodes;	// pointer to the buildNodes
+		BVHBuildNode* buildNodes;	// pointer to the root of the corresponding LBVH
 	};
 
 	struct LinearBVHNode {
-		Bounds3f bounds;
+		Bounds3f bounds;		// bounding box for the node 
 		union {
-			int primitivesOffset;   // leaf
-			int secondChildOffset;  // interior
+			int primitivesOffset;   // leaf --> stores offset
+			int secondChildOffset;  // interior --> stores offset to the second child
 		};
 		uint16_t nPrimitives;  // 0 -> interior node
-		uint8_t axis;          // interior node: xyz
-		uint8_t pad[1];        // ensure 32 byte total size
+		uint8_t axis;          // interior node: xyz (which of the coordinate axes the primitive were partitioned along when the hierarchy was built)
+		uint8_t pad[1];        // ensure 32 byte total size (avoid nodes to straddle cache lines on modern CPU architectures)
 	};
 
 	// BVHAccel Utility Functions
@@ -236,6 +236,7 @@ namespace pbrt {
 		: maxPrimsInNode(std::min(255, maxPrimsInNode)),
 		splitMethod(splitMethod),
 		primitives(std::move(p)) {
+
 		ProfilePhase _(Prof::AccelConstruction);
 		if (primitives.empty()) return;
 		// Build BVH from _primitives_
@@ -278,7 +279,7 @@ namespace pbrt {
 			primitives.size() * sizeof(primitives[0]);
 		nodes = AllocAligned<LinearBVHNode>(totalNodes);
 		int offset = 0;
-		flattenBVHTree(root, &offset);
+		flattenBVHTree(root, &offset);	// store BVH in linear order (depth-first-order)
 		CHECK_EQ(totalNodes, offset);
 	}
 
@@ -528,41 +529,44 @@ namespace pbrt {
 #else
 			uint32_t mask = 0x3ffc0000;
 #endif
+			// find sets of primitives that have the same values for the 12 high bits of their 30-bit Morton codes
 			if (end == (int)mortonPrims.size() ||
 				((mortonPrims[start].mortonCode & mask) !=
-				(mortonPrims[end].mortonCode & mask))) {
+				(mortonPrims[end].mortonCode & mask))) {	
 				// Add entry to _treeletsToBuild_ for this treelet
 				int nPrimitives = end - start;
 				int maxBVHNodes = 2 * nPrimitives;
 				BVHBuildNode* nodes = arena.Alloc<BVHBuildNode>(maxBVHNodes, false);
+					// false - don't execute the constructors of the underlying objects because of significant overhead
 				treeletsToBuild.push_back({ start, nPrimitives, nodes });
 				start = end;
 			}
 		}
 
 		// Create LBVHs for treelets in parallel
-		std::atomic<int> atomicTotal(0), orderedPrimsOffset(0);
+		std::atomic<int> atomicTotal(0),			// total number of nodes in all of the LBVHs
+						orderedPrimsOffset(0);		// index of the next available entry in orderedPrims
 		orderedPrims.resize(primitives.size());
 		ParallelFor([&](int i) {
 			// Generate _i_th LBVH treelet
 			int nodesCreated = 0;
-			const int firstBitIndex = 29 - 12;
+			const int firstBitIndex = 29 - 12;	// previously used high 12 bits to cluster the primitives
 			LBVHTreelet& tr = treeletsToBuild[i];
 			tr.buildNodes =
 				emitLBVH(tr.buildNodes, primitiveInfo, &mortonPrims[tr.startIndex],
 					tr.nPrimitives, &nodesCreated, orderedPrims,
 					&orderedPrimsOffset, firstBitIndex);
-			atomicTotal += nodesCreated;
+			atomicTotal += nodesCreated;	// update atomic variable once per treelet when each treelet is done
 			}, treeletsToBuild.size());
 		*totalNodes = atomicTotal;
 
 		// Create and return SAH BVH from LBVH treelets
 		std::vector<BVHBuildNode*> finishedTreelets;
 		finishedTreelets.reserve(treeletsToBuild.size());
-		for (LBVHTreelet& treelet : treeletsToBuild)
+		for (LBVHTreelet& treelet : treeletsToBuild)	// add all treelets to the finsihedTreelets vector
 			finishedTreelets.push_back(treelet.buildNodes);
 		return buildUpperSAH(arena, finishedTreelets, 0, finishedTreelets.size(),
-			totalNodes);
+			totalNodes); // create a BVH of all treelets
 	}
 
 	BVHBuildNode* BVHAccel::emitLBVH(
@@ -571,35 +575,41 @@ namespace pbrt {
 		MortonPrimitive* mortonPrims, int nPrimitives, int* totalNodes,
 		std::vector<std::shared_ptr<Primitive>>& orderedPrims,
 		std::atomic<int>* orderedPrimsOffset, int bitIndex) const {
+
 		CHECK_GT(nPrimitives, 0);
-		if (bitIndex == -1 || nPrimitives < maxPrimsInNode) {
+		if (bitIndex == -1 || nPrimitives < maxPrimsInNode) {	// check if partitioned the primitive with the final low bit or if it's down a small number of primitives
 			// Create and return leaf node of LBVH treelet
 			(*totalNodes)++;
 			BVHBuildNode* node = buildNodes++;
 			Bounds3f bounds;
-			int firstPrimOffset = orderedPrimsOffset->fetch_add(nPrimitives);
+			int firstPrimOffset = orderedPrimsOffset->fetch_add(nPrimitives);	// atomically add the value of nPrimitives to orderedPrimsOffset and returns its olf value before the addition
 			for (int i = 0; i < nPrimitives; ++i) {
 				int primitiveIndex = mortonPrims[i].primitiveIndex;
 				orderedPrims[firstPrimOffset + i] = primitives[primitiveIndex];
-				bounds = Union(bounds, primitiveInfo[primitiveIndex].bounds);
+				bounds = Union(bounds, primitiveInfo[primitiveIndex].bounds);	// create bounding box around Primitives
 			}
-			node->InitLeaf(firstPrimOffset, nPrimitives, bounds);
+			node->InitLeaf(firstPrimOffset, nPrimitives, bounds);	// create new Leaf
 			return node;
 		}
 		else {
 			int mask = 1 << bitIndex;
 			// Advance to next subtree level if there's no LBVH split for this bit
 			if ((mortonPrims[0].mortonCode & mask) ==
-				(mortonPrims[nPrimitives - 1].mortonCode & mask))
+				(mortonPrims[nPrimitives - 1].mortonCode & mask)) { // check if first and last primitive in the range both have the same bit value for this plane
+				// if all of the primitives lie on the same side of the splitting plane
+				// --> proceed to the next bit without unnecessarily creating a node.
 				return emitLBVH(buildNodes, primitiveInfo, mortonPrims, nPrimitives,
 					totalNodes, orderedPrims, orderedPrimsOffset,
 					bitIndex - 1);
+			}
 
 			// Find LBVH split point for this dimension
+			// using binary search
 			int searchStart = 0, searchEnd = nPrimitives - 1;
 			while (searchStart + 1 != searchEnd) {
 				CHECK_NE(searchStart, searchEnd);
 				int mid = (searchStart + searchEnd) / 2;
+				// check if the bitIndexth bit goes from 0 to 1 in the current set of primitives
 				if ((mortonPrims[searchStart].mortonCode & mask) ==
 					(mortonPrims[mid].mortonCode & mask))
 					searchStart = mid;
@@ -609,21 +619,25 @@ namespace pbrt {
 					searchEnd = mid;
 				}
 			}
-			int splitOffset = searchEnd;
+			int splitOffset = searchEnd;	// splitting offset
+
 			CHECK_LE(splitOffset, nPrimitives - 1);
 			CHECK_NE(mortonPrims[splitOffset - 1].mortonCode & mask,
 				mortonPrims[splitOffset].mortonCode & mask);
 
 			// Create and return interior LBVH node
 			(*totalNodes)++;
+			// claim a node to use as an interior node
 			BVHBuildNode* node = buildNodes++;
+			// recursively build LBVHs for both partitioned sets of primitives
 			BVHBuildNode* lbvh[2] = {
 				emitLBVH(buildNodes, primitiveInfo, mortonPrims, splitOffset,
 						 totalNodes, orderedPrims, orderedPrimsOffset,
 						 bitIndex - 1),
 				emitLBVH(buildNodes, primitiveInfo, &mortonPrims[splitOffset],
 						 nPrimitives - splitOffset, totalNodes, orderedPrims,
-						 orderedPrimsOffset, bitIndex - 1) };
+						 orderedPrimsOffset, bitIndex - 1)
+			};
 			int axis = bitIndex % 3;
 			node->InitInterior(axis, lbvh[0], lbvh[1]);
 			return node;
@@ -735,18 +749,18 @@ namespace pbrt {
 	int BVHAccel::flattenBVHTree(BVHBuildNode* node, int* offset) {
 		LinearBVHNode* linearNode = &nodes[*offset];
 		linearNode->bounds = node->bounds;
-		int myOffset = (*offset)++;
-		if (node->nPrimitives > 0) {
+		int myOffset = (*offset)++; //increase offset 
+		if (node->nPrimitives > 0) {	// leaf node
 			CHECK(!node->children[0] && !node->children[1]);
 			CHECK_LT(node->nPrimitives, 65536);
 			linearNode->primitivesOffset = node->firstPrimOffset;
 			linearNode->nPrimitives = node->nPrimitives;
 		}
-		else {
+		else { // interior node
 			// Create interior flattened BVH node
 			linearNode->axis = node->splitAxis;
 			linearNode->nPrimitives = 0;
-			flattenBVHTree(node->children[0], offset);
+			flattenBVHTree(node->children[0], offset); //first child ends up immediately after the current node in the array 
 			linearNode->secondChildOffset =
 				flattenBVHTree(node->children[1], offset);
 		}
