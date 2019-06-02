@@ -39,83 +39,38 @@
 
 namespace pbrt {
 
-/// <summary>
-/// Scene Declarations
-/// </summary>
-class Scene {
-public:
-	// Scene Public Methods
-	Scene() {};	// TODO DELTE DEFAULT
-	/// <summary>
-	/// Initializes a new instance of the <see cref="Scene"/> class.
-	/// </summary>
-	/// <param name="aggregate">The aggregate.</param>
-	/// <param name="lights">The lights.</param>
-/*	Scene(std::shared_ptr<Primitive> aggregate,
-		const std::vector<std::shared_ptr<Light>> &lights)
-		: lights(lights), aggregate(aggregate) {
-		// Scene Constructor Implementation
-		worldBound = aggregate->WorldBound();
-		for (const auto & light : lights) {
-			light->Preprocess(*this);
-			if (light->flags & (int)LightFlags::Infinite)
-				infiniteLights.push_back(light);
+	// Scene Declarations
+	class Scene {
+	public:
+		// Scene Public Methods
+		Scene(std::shared_ptr<Primitive> aggregate,
+			const std::vector<std::shared_ptr<Light>>& lights)
+			: lights(lights), aggregate(aggregate) {
+			// Scene Constructor Implementation
+			worldBound = aggregate->WorldBound();
+			for (const auto& light : lights) {
+				light->Preprocess(*this);
+				if (light->flags & (int)LightFlags::Infinite)
+					infiniteLights.push_back(light);
+			}
 		}
-	}
+		const Bounds3f& WorldBound() const { return worldBound; }
+		bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
+		bool IntersectP(const Ray& ray) const;
+		bool IntersectTr(Ray ray, Sampler& sampler, SurfaceInteraction* isect,
+			Spectrum* transmittance) const;
 
-	/// <summary>
-	/// Worlds the bound.
-	/// </summary>
-	/// <returns></returns>
-	const Bounds3f &WorldBound() const { return worldBound; }
+		// Scene Public Data
+		std::vector<std::shared_ptr<Light>> lights;
+		// Store infinite light sources separately for cases where we only want
+		// to loop over them.
+		std::vector<std::shared_ptr<Light>> infiniteLights;
 
-	/// <summary>
-	/// Traces the given ray into the scene.
-	/// If Intersection it fills in the provided SurfaceInteraction structure with information
-	/// about the closest intersection point along the ray.
-	/// </summary>
-	/// <param name="ray">The ray.</param>
-	/// <param name="isect">The isect.</param>
-	/// <returns>Indicating whether the ray intersected any of the primitives</returns>
-	bool Intersect(const Ray &ray,
-					SurfaceInteraction *isect) const;
-
-	/// <summary>
-	/// Checks for the existence of intersections along the ray.
-	/// Does not return any information about those intersections.
-	/// Because this routine doesn’t need to search for the closest intersection or compute
-	/// any additional information about intersections, it is generally more efficient than Scene::Intersect(). 
-	/// This routine is used for shadow rays. 
-	/// </summary>
-	/// <param name="ray">The ray.</param>
-	/// <returns></returns>
-	bool IntersectP(const Ray &ray) const;
-
-	/// <summary>
-	/// Intersects the tr.
-	/// </summary>
-	/// <param name="ray">The ray.</param>
-	/// <param name="sampler">The sampler.</param>
-	/// <param name="isect">The isect.</param>
-	/// <param name="transmittance">The transmittance.</param>
-	/// <returns></returns>
-	bool IntersectTr(Ray ray,
-					Sampler &sampler,
-					SurfaceInteraction * isect,
-					Spectrum *transmittance) const;
-	
-
-	// Scene Public Data
-	std::vector<std::shared_ptr<Light>> lights;
-	// Store infinite light sources separately for cases where we only want
-	// to loop over them.
-	std::vector<std::shared_ptr<Light>> infiniteLights;*/
-
-/*private:
-	// Scene Private Data
-	std::shared_ptr<Primitive> aggregate;
-	Bounds3f WorldBound;*/
-};
+	private:
+		// Scene Private Data
+		std::shared_ptr<Primitive> aggregate;
+		Bounds3f worldBound;
+	};
 
 }  // namespace pbrt
 
