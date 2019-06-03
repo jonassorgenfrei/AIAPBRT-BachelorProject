@@ -47,29 +47,25 @@ namespace pbrt {
 		return false;
 	}
 
-
 	// Vector Declarations
 	// -------------------
 	template <typename T> class Vector2 {
 		public:
 			// Vector2 Public Methods
 			Vector2() { x = y = 0; }
-			Vector2(T xx, T yy) 
-				: x(xx), y(yy) 
-			{ DCHECK(!HasNaNs()); }
+			Vector2(T xx, T yy) : x(xx), y(yy) { DCHECK(!HasNaNs()); }
 			bool HasNaNs() const { return isNaN(x) || isNaN(y); }
-			explicit Vector2(const Point2<T> &p);
-			explicit Vector2(const Point3<T> &p);
+			explicit Vector2(const Point2<T>& p);
+			explicit Vector2(const Point3<T>& p);
 #ifndef NDEBUG
 			// The default versions of these are fine for release builds; for debug
 			// we define them so that we can add the Assert checks.
-			Vector2(const Vector2<T> &v) {
+			Vector2(const Vector2<T>& v) {
 				DCHECK(!v.HasNaNs());
 				x = v.x;
 				y = v.y;
 			}
-			
-			Vector2<T> &operator=(const Vector2<T> &v) {
+			Vector2<T>& operator=(const Vector2<T>& v) {
 				DCHECK(!v.HasNaNs());
 				x = v.x;
 				y = v.y;
@@ -77,77 +73,70 @@ namespace pbrt {
 			}
 #endif // !NDEBUG
 
-			Vector2<T> operator+(const Vector2<T> &v) const {
+			Vector2<T> operator+(const Vector2<T>& v) const {
 				DCHECK(!v.HasNaNs());
 				return Vector2(x + v.x, y + v.y);
 			}
 
-			Vector2<T> operator+=(const Vector2<T> &v) {
+			Vector2<T>& operator+=(const Vector2<T>& v) {
 				DCHECK(!v.HasNaNs());
 				x += v.x;
 				y += v.y;
 				return *this;
 			}
-
-			Vector2<T> operator-(const Vector2<T> &v) const {
+			Vector2<T> operator-(const Vector2<T>& v) const {
 				DCHECK(!v.HasNaNs());
-				return Vector2(x-v.x,y-v.y);
+				return Vector2(x - v.x, y - v.y);
 			}
 
-			Vector2<T>& operator-=(const Vector2<T> &v) {
+			Vector2<T>& operator-=(const Vector2<T>& v) {
 				DCHECK(!v.HasNaNs());
 				x -= v.x;
 				y -= v.y;
 				return *this;
 			}
 
-			bool operator==(const Vector2<T> &v) const {	return x == v.x && y == v.y;	}
-
-			bool operator!=(const Vector2<T> &v) const {	return x != v.x || y != v.y;	}
-
+			bool operator==(const Vector2<T>& v) const { return x == v.x && y == v.y; }
+			bool operator!=(const Vector2<T>& v) const { return x != v.x || y != v.y; }
 			template <typename U>
 			Vector2<T> operator*(U f) const {
-				return Vector2<T>(f*x, f*y);
+				return Vector2<T>(f * x, f * y);
 			}
 
 			template <typename U>
-			Vector2<T> &operator*=(U f) {
-				DCHECK(!v.HasNaNs());
+			Vector2<T>& operator*=(U f) {
+				DCHECK(!isNaN(f));
 				x *= f;
 				y *= f;
 				return *this;
 			}
-
 			template <typename U>
 			Vector2<T> operator/(U f) const {
 				CHECK_NE(f, 0);
 				Float inv = (Float)1 / f;
-				return Vector2<T>(x*inv, y*inv);
+				return Vector2<T>(x * inv, y * inv);
 			}
 
 			template <typename U>
-			Vector2<T> &operator/=(U f) {
+			Vector2<T>& operator/=(U f) {
 				CHECK_NE(f, 0);
 				Float inv = (Float)1 / f;
 				x *= inv;
 				y *= inv;
 				return *this;
 			}
-
 			Vector2<T> operator-() const { return Vector2<T>(-x, -y); }
-
 			T operator[](int i) const {
 				DCHECK(i >= 0 && i <= 1);
 				if (i == 0) return x;
 				return y;
 			}
 
-			T &operator[](int i) {
+			T& operator[](int i) {
 				DCHECK(i >= 0 && i <= 1);
 				if (i == 0) return x;
 				return y;
 			}
-
 			Float LengthSquared() const { return x * x + y * y; }
 			Float Length() const { return std::sqrt(LengthSquared()); }
 
@@ -156,13 +145,13 @@ namespace pbrt {
 	};
 
 	template <typename T>
-	inline std::ostream &operator<<(std::ostream &os, const Vector2<T> &v) {
-		os << "[" << v.x << ", " << v.y << "]";
+	inline std::ostream& operator<<(std::ostream& os, const Vector2<T>& v) {
+		os << "[ " << v.x << ", " << v.y << " ]";
 		return os;
 	}
 
 	template <>
-	inline std::ostream &operator<<(std::ostream &os, const Vector2<Float> &v) {
+	inline std::ostream& operator<<(std::ostream& os, const Vector2<Float>& v) {
 		os << StringPrintf("[ %f, %f ]", v.x, v.y);
 		return os;
 	}
@@ -177,7 +166,7 @@ namespace pbrt {
 			return z;
 		}
 
-		T &operator[](int i) {
+		T& operator[](int i) {
 			DCHECK(i >= 0 && i <= 2);
 			if (i == 0) return x;
 			if (i == 1) return y;
@@ -193,14 +182,14 @@ namespace pbrt {
 		// The default versions of these are fine for release builds; for debug
 		// we define them so that we can add the Assert checks.
 		Vector3(const Vector3<T> &v) {
-			DCHECK(!HasNaNs());
+			DCHECK(!v.HasNaNs());
 			x = v.x;
 			y = v.y;
 			z = v.z;
 		}
 
 		Vector3<T> &operator=(const Vector3<T> &v) {
-			DCHECK(!HasNaNs());
+			DCHECK(!v.HasNaNs());
 			x = v.x;
 			y = v.y;
 			z = v.z;
@@ -214,7 +203,7 @@ namespace pbrt {
 		}
 
 		Vector3<T> operator+=(const Vector3<T> &v) {
-			DCHECK(!HasNaNs());
+			DCHECK(!v.HasNaNs());
 			x += v.x;
 			y += v.y;
 			z += v.z;
@@ -222,7 +211,7 @@ namespace pbrt {
 		}
 
 		Vector3<T> operator-(const Vector3<T> &v) const {
-			DCHECK(!HasNaNs());
+			DCHECK(!v.HasNaNs());
 			return Vector3(x - v.x, y - v.y, z - v.z);
 		}
 
@@ -1084,6 +1073,7 @@ namespace pbrt {
 	// returns the absolute value of the dot product
 	template <typename T>
 	inline T AbsDot(const Vector3<T> &v1, const Vector3<T> &v2) {
+		DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
 		return std::abs(Dot(v1, v2));
 	}
 
@@ -1128,7 +1118,7 @@ namespace pbrt {
 	// returns the largest coordinate value
 	template <typename T>
 	T MaxComponent(const Vector3<T> &v) {
-		return std::max(v.x, std::min(v.y, v.z));
+		return std::max(v.x, std::max(v.y, v.z));
 	}
 
 	// returns the index of the component with the largest values
@@ -1703,5 +1693,4 @@ namespace pbrt {
 	}
 
 } // namespace pbrt
-
 #endif // PBRT_CORE_GEOMETRY_H
