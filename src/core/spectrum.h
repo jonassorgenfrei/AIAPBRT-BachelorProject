@@ -49,12 +49,26 @@ namespace pbrt {
 	
 	extern Float AverageSpectrumSamples(const Float* lambda, const Float* vals,
 		int n, Float lambdaStart, Float lambdaEnd);
+
+	/// <summary>
+	/// Converts XYZ to RGB values. Using tristimulus theory of color perception.
+	/// Using a standard set of these RGB spectra that has been defined for high-definition television.
+	/// </summary>
+	/// <param name="xyz">The xyz-values.</param>
+	/// <param name="rgb">The RGB-values.</param>
 	inline void XYZToRGB(const Float xyz[3], Float rgb[3]) {
 		rgb[0] = 3.240479f * xyz[0] - 1.537150f * xyz[1] - 0.498535f * xyz[2];
 		rgb[1] = -0.969256f * xyz[0] + 1.875991f * xyz[1] + 0.041556f * xyz[2];
 		rgb[2] = 0.055648f * xyz[0] - 0.204043f * xyz[1] + 1.057311f * xyz[2];
 	}
 
+	/// <summary>
+	/// Converts RGB to xyz-values.  Using tristimulus theory of color perception.
+	/// Using a standard set of these RGB spectra that has been defined for high-definition television.
+	/// NOTE: Inverse Matrix of coefficents to the XYZtoRGB.
+	/// </summary>
+	/// <param name="rgb">The RGB.</param>
+	/// <param name="xyz">The xyz.</param>
 	inline void RGBToXYZ(const Float rgb[3], Float xyz[3]) {
 		xyz[0] = 0.412453f * rgb[0] + 0.357580f * rgb[1] + 0.180423f * rgb[2];
 		xyz[1] = 0.212671f * rgb[0] + 0.715160f * rgb[1] + 0.072169f * rgb[2];
@@ -68,12 +82,19 @@ namespace pbrt {
 	extern void BlackbodyNormalized(const Float* lambda, int n, Float T,
 		Float* vals);
 
-	// Spectral Data Declarations
+	// Spectral Data Declarations	
+
+	/// Values of the standard X(lambda), Y(lambda), Y(lambda) response curves sampled
+	/// at 1-nm increments from 360nm to 830nm 
+	/// <summary>
+	/// The number of cie samples
+	/// </summary>
 	static const int nCIESamples = 471;
 	extern const Float CIE_X[nCIESamples];
 	extern const Float CIE_Y[nCIESamples];
 	extern const Float CIE_Z[nCIESamples];
-	extern const Float CIE_lambda[nCIESamples];
+	extern const Float CIE_lambda[nCIESamples];	// contains the wavelengths of the ith elements
+
 	static const Float CIE_Y_integral = 106.856895;
 	static const int nRGB2SpectSamples = 32;
 	extern const Float RGB2SpectLambda[nRGB2SpectSamples];
@@ -549,6 +570,11 @@ namespace pbrt {
 			return r;
 		}
 
+		/// <summary>
+		/// Initializes this instance.
+		/// Commputes the XYZ matching curves.
+		/// Called at startup by the pbrtInit() function.
+		/// </summary>
 		static void Init() {
 			// Compute XYZ matching functions for _SampledSpectrum_
 			for (int i = 0; i < nSpectralSamples; ++i) {
@@ -615,7 +641,15 @@ namespace pbrt {
 			}
 		}
 		
+		/// <summary>
+		/// Converts the SPD to (xlambda, ylambda, zlambda,) coefficients.
+		/// </summary>
+		/// <param name="xyz">The xyz-coefficients.</param>
 		void ToXYZ(Float xyz[3]) const {
+			// To compute XYZ coefficients the integrals from the X,Y,Z Equation are computed 
+			// with a Riemann sum
+			// xlambda ~ (lambdaend - lambdastart)/N * sum[i=0, i < N-1](xic) 
+
 			xyz[0] = xyz[1] = xyz[2] = 0.f;
 			for (int i = 0; i < nSpectralSamples; ++i) {
 				xyz[0] += X.c[i] * c[i];
@@ -629,6 +663,12 @@ namespace pbrt {
 			xyz[2] *= scale;
 		}
 		
+		/// <summary>
+		/// Computes the y alone.
+		/// The y-coefficient of XYZ color is closely related to luminance, which measures the preceived 
+		/// brightness of a color.
+		/// </summary>
+		/// <returns>The y-coefficient</returns>
 		Float y() const {
 			Float yy = 0.f;
 			for (int i = 0; i < nSpectralSamples; ++i) yy += Y.c[i] * c[i];
@@ -636,12 +676,21 @@ namespace pbrt {
 				Float(CIE_Y_integral * nSpectralSamples);
 		}
 		
+		/// <summary>
+		/// Converts the SPD to RGB values, by first converting to XYZ and then 
+		/// using the XYZToRGB() utility function.
+		/// </summary>
+		/// <param name="rgb">The RGB values.</param>
 		void ToRGB(Float rgb[3]) const {
 			Float xyz[3];
 			ToXYZ(xyz);
 			XYZToRGB(xyz, rgb);
 		}
 		
+		/// <summary>
+		/// Creates an RGBSpectrum.
+		/// </summary>
+		/// <returns>RGB Spectrum</returns>
 		RGBSpectrum ToRGBSpectrum() const;
 		
 		static SampledSpectrum FromRGB(
@@ -657,7 +706,7 @@ namespace pbrt {
 
 	private:
 		// SampledSpectrum Private Data
-		static SampledSpectrum X, Y, Z;
+		static SampledSpectrum X, Y, Z;	// XYZ matching curves in its spectral representation
 		static SampledSpectrum rgbRefl2SpectWhite, rgbRefl2SpectCyan;
 		static SampledSpectrum rgbRefl2SpectMagenta, rgbRefl2SpectYellow;
 		static SampledSpectrum rgbRefl2SpectRed, rgbRefl2SpectGreen;

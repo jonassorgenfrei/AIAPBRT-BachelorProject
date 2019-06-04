@@ -147,7 +147,7 @@ Float AverageSpectrumSamples(const Float* lambda, const Float* vals, int n,
 
 RGBSpectrum SampledSpectrum::ToRGBSpectrum() const {
     Float rgb[3];
-    ToRGB(rgb);
+    ToRGB(rgb);	//uses the ToRGB function
     return RGBSpectrum::FromRGB(rgb);
 }
 
