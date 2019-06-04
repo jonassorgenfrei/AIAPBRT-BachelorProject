@@ -116,10 +116,12 @@ namespace pbrt {
 	class CoefficientSpectrum;
 	class RGBSpectrum;
 	class SampledSpectrum;
-#ifdef PBRT_SAMPLED_SPECTRUM
+	// Selection of which spectrum representation is used 
+	// for the Spectrum type
+#ifdef PBRT_SAMPLED_SPECTRUM	// Compiler flag to take advantage of inline functions 
 	typedef SampledSpectrum Spectrum;
 #else
-	typedef RGBSpectrum Spectrum;
+	typedef RGBSpectrum Spectrum;		// Default
 #endif
 	class Camera;
 	struct CameraSample;

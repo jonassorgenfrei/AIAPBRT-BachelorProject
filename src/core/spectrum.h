@@ -38,12 +38,15 @@
 namespace pbrt {
 
 	// Spectrum Utility Declarations
-	static const int sampledLambdaStart = 400;
-	static const int sampledLambdaEnd = 700;
-	static const int nSpectralSamples = 60;
+	static const int sampledLambdaStart = 400;	// wavelength range minimum
+	static const int sampledLambdaEnd = 700;	// wavelength range maximum
+	static const int nSpectralSamples = 60;		// number of samples in the Spectrum
+
+
 	extern bool SpectrumSamplesSorted(const Float* lambda, const Float* vals,
 		int n);
 	extern void SortSpectrumSamples(Float* lambda, Float* vals, int n);
+	
 	extern Float AverageSpectrumSamples(const Float* lambda, const Float* vals,
 		int n, Float lambdaStart, Float lambdaEnd);
 	inline void XYZToRGB(const Float xyz[3], Float rgb[3]) {
@@ -89,15 +92,29 @@ namespace pbrt {
 	extern const Float RGBIllum2SpectGreen[nRGB2SpectSamples];
 	extern const Float RGBIllum2SpectBlue[nRGB2SpectSamples];
 
-	// Spectrum Declarations
+	/// Spectrum Declarations
+
+	/// <summary>
+	/// Representation of a spectrum as a
+	/// particular number of samples given as the nSpectrumSample
+	/// template parameter.
+	/// Note: implicit assumption that the spectral representation is a set of 
+	/// coefficients that linearly scale a fixed set of basis functions.
+	/// </summary>
 	template <int nSpectrumSamples>
 	class CoefficientSpectrum {
 	public:
 		// CoefficientSpectrum Public Methods
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CoefficientSpectrum"/> class.
+		/// </summary>
+		/// <param name="v">Constant value across all wavelengths.</param>
 		CoefficientSpectrum(Float v = 0.f) {
 			for (int i = 0; i < nSpectrumSamples; ++i) c[i] = v;
 			DCHECK(!HasNaNs());
 		}
+
 #ifdef DEBUG
 		CoefficientSpectrum(const CoefficientSpectrum & s) {
 			DCHECK(!s.HasNaNs());
@@ -110,7 +127,12 @@ namespace pbrt {
 			return *this;
 		}
 #endif  // DEBUG
-		void Print(FILE * f) const {
+
+		/// <summary>
+		/// Prints the Spectrum on the specified filestream.
+		/// </summary>
+		/// <param name="f">The filestream</param>
+		void Print(FILE* f) const {
 			fprintf(f, "[ ");
 			for (int i = 0; i < nSpectrumSamples; ++i) {
 				fprintf(f, "%f", c[i]);
@@ -118,23 +140,51 @@ namespace pbrt {
 			}
 			fprintf(f, "]");
 		}
-		CoefficientSpectrum& operator+=(const CoefficientSpectrum & s2) {
+		
+		/// <summary>
+		/// Operation to add pairs of spectral distribution.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="s2">The Spectrum to add.</param>
+		/// <returns>This</returns>
+		CoefficientSpectrum& operator+=(const CoefficientSpectrum& s2) {
 			DCHECK(!s2.HasNaNs());
 			for (int i = 0; i < nSpectrumSamples; ++i) c[i] += s2.c[i];
 			return *this;
 		}
-		CoefficientSpectrum operator+(const CoefficientSpectrum & s2) const {
+
+		/// <summary>
+		/// Operation to add pairs of spectral distribution.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="s2">The Spectrum to add.</param>
+		/// <returns>The Result of the add operation.</returns>
+		CoefficientSpectrum operator+(const CoefficientSpectrum& s2) const {
 			DCHECK(!s2.HasNaNs());
 			CoefficientSpectrum ret = *this;
 			for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] += s2.c[i];
 			return ret;
 		}
-		CoefficientSpectrum operator-(const CoefficientSpectrum & s2) const {
+
+		/// <summary>
+		/// Operator to subtract a pair of spectral distribution.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="s2">The Spectrum to subtract.</param>
+		/// <returns>The Result of the subtract operation.</returns>
+		CoefficientSpectrum operator-(const CoefficientSpectrum& s2) const {
 			DCHECK(!s2.HasNaNs());
 			CoefficientSpectrum ret = *this;
 			for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] -= s2.c[i];
 			return ret;
 		}
+
+		/// <summary>
+		/// Operator to divide a pair of spectral distribution.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="s2">The Spectrum which is the divisior.</param>
+		/// <returns>The Result of the division operation.</returns>
 		CoefficientSpectrum operator/(const CoefficientSpectrum & s2) const {
 			DCHECK(!s2.HasNaNs());
 			CoefficientSpectrum ret = *this;
@@ -144,33 +194,81 @@ namespace pbrt {
 			}
 			return ret;
 		}
+
+		/// <summary>
+		/// Operator to multiplicate a pair of spectral distribution.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="sp">The Spectrum which is the multiplicator.</param>
+		/// <returns>The Result of the multiplication operation.</returns>
 		CoefficientSpectrum operator*(const CoefficientSpectrum & sp) const {
 			DCHECK(!sp.HasNaNs());
 			CoefficientSpectrum ret = *this;
 			for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] *= sp.c[i];
 			return ret;
 		}
+
+		/// <summary>
+		/// Operator to multiplicate a pair of spectral distribution.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="sp">The Spectrum which is the multiplicator.</param>
+		/// <returns>This</returns>
 		CoefficientSpectrum& operator*=(const CoefficientSpectrum & sp) {
 			DCHECK(!sp.HasNaNs());
 			for (int i = 0; i < nSpectrumSamples; ++i) c[i] *= sp.c[i];
 			return *this;
 		}
+
+		/// <summary>
+		/// Operator to multiplicate a spectral distribution with a scalar.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="s2">The scalar to multiply onto.</param>
+		/// <returns>The Result of the multiplication operation.</returns>
 		CoefficientSpectrum operator*(Float a) const {
 			CoefficientSpectrum ret = *this;
 			for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] *= a;
 			DCHECK(!ret.HasNaNs());
 			return ret;
 		}
+
+		/// <summary>
+		/// Operator to multiplicate a spectral distribution with a scalar.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="s2">The scalar to multiply.</param>
+		/// <returns>This.</returns>
 		CoefficientSpectrum& operator*=(Float a) {
 			for (int i = 0; i < nSpectrumSamples; ++i) c[i] *= a;
 			DCHECK(!HasNaNs());
 			return *this;
 		}
+
+		/// <summary>
+		/// Operator to multiplicate a scalar with a spectral distribution.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="a">The scalar</param>
+		/// <param name="s">The spectrum</param>
+		/// <returns>
+		/// The Result of the multiplication operation.
+		/// </returns>
 		friend inline CoefficientSpectrum operator*(Float a,
 			const CoefficientSpectrum & s) {
 			DCHECK(!std::isnan(a) && !s.HasNaNs());
 			return s * a;
 		}
+
+
+		/// <summary>
+		/// Operator to divide the spectral distribution by a scalar.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="a">The scalar (divisior)</param>
+		/// <returns>
+		/// The result of the division operation.
+		/// </returns>
 		CoefficientSpectrum operator/(Float a) const {
 			CHECK_NE(a, 0);
 			DCHECK(!std::isnan(a));
@@ -179,49 +277,115 @@ namespace pbrt {
 			DCHECK(!ret.HasNaNs());
 			return ret;
 		}
+
+		/// <summary>
+		/// Operator to divide the spectral distribution by a scalar.
+		/// Component-wise.
+		/// </summary>
+		/// <param name="a">The scalar (divisior)</param>
+		/// <returns>This.</returns>
 		CoefficientSpectrum& operator/=(Float a) {
 			CHECK_NE(a, 0);
 			DCHECK(!std::isnan(a));
 			for (int i = 0; i < nSpectrumSamples; ++i) c[i] /= a;
 			return *this;
 		}
-		bool operator==(const CoefficientSpectrum & sp) const {
+
+		/// <summary>
+		/// Checks component wise if the specified spectrum is equal to this 
+		/// spectrum.
+		/// </summary>
+		/// <param name="sp">Specific spectrum.</param>
+		/// <returns><c>true</c> if the spectra are equal, otherwise <c>false</c></returns>
+		bool operator==(const CoefficientSpectrum& sp) const {
 			for (int i = 0; i < nSpectrumSamples; ++i)
 				if (c[i] != sp.c[i]) return false;
 			return true;
 		}
+
+		/// <summary>
+		/// Checks component wise if the specified spectrum is unequal to this 
+		/// spectrum.
+		/// </summary>
+		/// <param name="sp">Specific spectrum.</param>
+		/// <returns><c>true</c> if the spectra are unequal, otherwise <c>false</c></returns>
 		bool operator!=(const CoefficientSpectrum & sp) const {
 			return !(*this == sp);
 		}
+
+		/// <summary>
+		/// Determines whether this instance is black.
+		/// It Means, the the surface has values zero everywhere.
+		/// </summary>
+		/// <returns>
+		///   <c>true</c> if this instance is black; otherwise, <c>false</c>.
+		/// </returns>
 		bool IsBlack() const {
 			for (int i = 0; i < nSpectrumSamples; ++i)
 				if (c[i] != 0.) return false;
 			return true;
 		}
-		friend CoefficientSpectrum Sqrt(const CoefficientSpectrum & s) {
+
+		/// <summary>
+		/// Takes the Square root of spectrum component-wise.
+		/// </summary>
+		/// <param name="s">The s.</param>
+		/// <returns></returns>
+		friend CoefficientSpectrum Sqrt(const CoefficientSpectrum& s) {
 			CoefficientSpectrum ret;
 			for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = std::sqrt(s.c[i]);
 			DCHECK(!ret.HasNaNs());
 			return ret;
 		}
+
+		/// <summary>
+		/// Raises the SPD to a given power.
+		/// </summary>
+		/// <param name="s">The spectrum.</param>
+		/// <param name="e">The given power.</param>
+		/// <returns>Result of the raise operation.</returns>
 		template <int n>
-		friend inline CoefficientSpectrum<n> Pow(const CoefficientSpectrum<n> & s,
+		friend inline CoefficientSpectrum<n> Pow(const CoefficientSpectrum<n>& s,
 			Float e);
+
+		/// <summary>
+		/// Inverts the spectrum.
+		/// Component-wise.
+		/// </summary>
+		/// <returns>The inverted spectrum.</returns>
 		CoefficientSpectrum operator-() const {
 			CoefficientSpectrum ret;
 			for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = -c[i];
 			return ret;
 		}
-		friend CoefficientSpectrum Exp(const CoefficientSpectrum & s) {
+
+		/// <summary>
+		/// Computes e raised to the given power component-wise.
+		/// </summary>
+		/// <param name="s">The spectrum.</param>
+		/// <returns>Result of the e raise operation.</returns>
+		friend CoefficientSpectrum Exp(const CoefficientSpectrum& s) {
 			CoefficientSpectrum ret;
 			for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = std::exp(s.c[i]);
 			DCHECK(!ret.HasNaNs());
 			return ret;
 		}
-		friend std::ostream& operator<<(std::ostream & os,
+
+		/// <summary>
+		/// Operators the specified os.
+		/// </summary>
+		/// <param name="os">The os.</param>
+		/// <param name="s">The spectrum.</param>
+		/// <returns>The stream of the spectrum written on the osstream.</returns>
+		friend std::ostream& operator<<(std::ostream& os,
 			const CoefficientSpectrum & s) {
 			return os << s.ToString();
 		}
+
+		/// <summary>
+		/// Converts to the Spectrumto a string.
+		/// </summary>
+		/// <returns>Spectrum String.</returns>
 		std::string ToString() const {
 			std::string str = "[ ";
 			for (int i = 0; i < nSpectrumSamples; ++i) {
@@ -231,6 +395,13 @@ namespace pbrt {
 			str += " ]";
 			return str;
 		}
+		
+		/// <summary>
+		/// Clamps the Spectrum to the given parameters.
+		/// </summary>
+		/// <param name="low">The low clamp border. Default 0.</param>
+		/// <param name="high">The high clamp border.Default Infinity.</param>
+		/// <returns>The clamped spectrum.</returns>
 		CoefficientSpectrum Clamp(Float low = 0, Float high = Infinity) const {
 			CoefficientSpectrum ret;
 			for (int i = 0; i < nSpectrumSamples; ++i)
@@ -238,23 +409,51 @@ namespace pbrt {
 			DCHECK(!ret.HasNaNs());
 			return ret;
 		}
+		
+		/// <summary>
+		/// Returns the maximum component value in the spectrum.
+		/// </summary>
+		/// <returns>Maximum component value in the spectrum.</returns>
 		Float MaxComponentValue() const {
 			Float m = c[0];
 			for (int i = 1; i < nSpectrumSamples; ++i)
 				m = std::max(m, c[i]);
 			return m;
 		}
+
+		/// <summary>
+		/// Debuging Routine that determines whether the spectrum has NaNs.
+		/// </summary>
+		/// <returns>
+		///   <c>true</c> if it has NaNs otherwise, <c>false</c>.
+		/// </returns>
 		bool HasNaNs() const {
 			for (int i = 0; i < nSpectrumSamples; ++i)
 				if (std::isnan(c[i])) return true;
 			return false;
 		}
-		bool Write(FILE * f) const {
+
+		/// <summary>
+		/// Writes the specified file pointer.
+		/// </summary>
+		/// <param name="f">The file pointer.</param>
+		/// <returns>
+		///  <c>true</c> if the write was successfull, otherwise <c>false</c>
+		///</returns>
+		bool Write(FILE* f) const {
 			for (int i = 0; i < nSpectrumSamples; ++i)
 				if (fprintf(f, "%f ", c[i]) < 0) return false;
 			return true;
 		}
-		bool Read(FILE * f) {
+
+		/// <summary>
+		/// Reads the specified file pointer.
+		/// </summary>
+		/// <param name="f">The file pointer.</param>
+		/// <returns>
+		///  <c>true</c> if the write was successfull, otherwise <c>false</c>
+		///</returns>
+		bool Read(FILE* f) {
 			for (int i = 0; i < nSpectrumSamples; ++i) {
 				double v;
 				if (fscanf(f, "%lf ", &v) != 1) return false;
@@ -262,16 +461,31 @@ namespace pbrt {
 			}
 			return true;
 		}
+
+		/// <summary>
+		/// Operator to access individual samples values.
+		/// </summary>
+		/// <param name="i">The index.</param>
+		/// <returns>The pointer to the samples at the specified index.</returns>
 		Float& operator[](int i) {
 			DCHECK(i >= 0 && i < nSpectrumSamples);
 			return c[i];
 		}
+		
+		/// <summary>
+		/// Operator to access individual samples values.
+		/// </summary>
+		/// <param name="i">The index.</param>
+		/// <returns>The samples at the specified index.</returns>
 		Float operator[](int i) const {
 			DCHECK(i >= 0 && i < nSpectrumSamples);
 			return c[i];
 		}
 
 		// CoefficientSpectrum Public Data
+		/// <summary>
+		/// Gives the number of samples used to represent the SPD
+		/// </summary>
 		static const int nSamples = nSpectrumSamples;
 
 	protected:
@@ -279,16 +493,42 @@ namespace pbrt {
 		Float c[nSpectrumSamples];
 	};
 
+	/// <summary>
+	/// 
+	/// It uses the <see cref="Coefficientspectrum"\> infrastructure to represent 
+	/// an SPD with uniformly spaced samples between a starting and an ending wavelength.
+	/// </summary>
+	/// <seealso cref="CoefficientSpectrum{nSpectralSamples}" />
 	class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
 	public:
 		// SampledSpectrum Public Methods
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="SampledSpectrum"/> class.
+		/// </summary>
+		/// <param name="v">The Spectrum.</param>
 		SampledSpectrum(Float v = 0.f) : CoefficientSpectrum(v) {}
+		
+		/// <summary>
+		/// Initializes a new instance of the <see cref="SampledSpectrum"/> class.
+		/// </summary>
+		/// <param name="v">The Spectrum with the templated amount of Samples.</param>
 		SampledSpectrum(const CoefficientSpectrum<nSpectralSamples>& v)
 			: CoefficientSpectrum<nSpectralSamples>(v) {}
+
+		/// <summary>
+		/// Takes arrays of SPD sample values v at given wavelengths lambda and 
+		/// uses them to define a piecewise linear function to represent the SPD.
+		/// </summary>
+		/// <param name="lambda">The wavelength values.</param>
+		/// <param name="v">The value coressponding to the wavelength lambda at the same index..</param>
+		/// <param name="n">The number of sample values.</param>
+		/// <returns></returns>
 		static SampledSpectrum FromSampled(const Float* lambda, const Float* v,
 			int n) {
 			// Sort samples if unordered, use sorted for returned spectrum
 			if (!SpectrumSamplesSorted(lambda, v, n)) {
+				// if samples are not sorted allocate new storage
 				std::vector<Float> slambda(&lambda[0], &lambda[n]);
 				std::vector<Float> sv(&v[0], &v[n]);
 				SortSpectrumSamples(&slambda[0], &sv[0], n);
@@ -297,14 +537,18 @@ namespace pbrt {
 			SampledSpectrum r;
 			for (int i = 0; i < nSpectralSamples; ++i) {
 				// Compute average value of given SPD over $i$th sample's range
+				// 1D instance of sampling and reconstruction
 				Float lambda0 = Lerp(Float(i) / Float(nSpectralSamples),
 					sampledLambdaStart, sampledLambdaEnd);
 				Float lambda1 = Lerp(Float(i + 1) / Float(nSpectralSamples),
 					sampledLambdaStart, sampledLambdaEnd);
+				// compute the average of the piecewise linear function over the range of
+				// wavelengths that each SPD sample is responsible for
 				r.c[i] = AverageSpectrumSamples(lambda, v, n, lambda0, lambda1);
 			}
 			return r;
 		}
+
 		static void Init() {
 			// Compute XYZ matching functions for _SampledSpectrum_
 			for (int i = 0; i < nSpectralSamples; ++i) {
@@ -370,6 +614,7 @@ namespace pbrt {
 						nRGB2SpectSamples, wl0, wl1);
 			}
 		}
+		
 		void ToXYZ(Float xyz[3]) const {
 			xyz[0] = xyz[1] = xyz[2] = 0.f;
 			for (int i = 0; i < nSpectralSamples; ++i) {
@@ -383,18 +628,22 @@ namespace pbrt {
 			xyz[1] *= scale;
 			xyz[2] *= scale;
 		}
+		
 		Float y() const {
 			Float yy = 0.f;
 			for (int i = 0; i < nSpectralSamples; ++i) yy += Y.c[i] * c[i];
 			return yy * Float(sampledLambdaEnd - sampledLambdaStart) /
 				Float(CIE_Y_integral * nSpectralSamples);
 		}
+		
 		void ToRGB(Float rgb[3]) const {
 			Float xyz[3];
 			ToXYZ(xyz);
 			XYZToRGB(xyz, rgb);
 		}
+		
 		RGBSpectrum ToRGBSpectrum() const;
+		
 		static SampledSpectrum FromRGB(
 			const Float rgb[3], SpectrumType type = SpectrumType::Illuminant);
 		static SampledSpectrum FromXYZ(
@@ -419,6 +668,10 @@ namespace pbrt {
 		static SampledSpectrum rgbIllum2SpectBlue;
 	};
 
+	/// <summary>
+	/// More efficient but less accurate Representation of SPD
+	/// </summary>
+	/// <seealso cref="CoefficientSpectrum{3}" />
 	class RGBSpectrum : public CoefficientSpectrum<3> {
 		using CoefficientSpectrum<3>::c;
 
@@ -490,11 +743,25 @@ namespace pbrt {
 		return ret;
 	}
 
-	inline RGBSpectrum Lerp(Float t, const RGBSpectrum & s1, const RGBSpectrum & s2) {
+	/// <summary>
+	/// Linearly interpolate between two SPDs with a parameter t.
+	/// </summary>
+	/// <param name="t">The t value to interpolate between.</param>
+	/// <param name="s1">The spectrum 1.</param>
+	/// <param name="s2">The spectrum 2.</param>
+	/// <returns>The interpolated Spectrum.</returns>
+	inline RGBSpectrum Lerp(Float t, const RGBSpectrum& s1, const RGBSpectrum& s2) {
 		return (1 - t) * s1 + t * s2;
 	}
 
-	inline SampledSpectrum Lerp(Float t, const SampledSpectrum & s1,
+	/// <summary>
+	/// Linearly interpolate between two SPDs with a parameter t.
+	/// </summary>
+	/// <param name="t">The t.</param>
+	/// <param name="s1">The spectrum 1.</param>
+	/// <param name="s2">The spectrum 2.</param>
+	/// <returns>The interpolated Spectrum.</returns>
+	inline SampledSpectrum Lerp(Float t, const SampledSpectrum& s1,
 		const SampledSpectrum & s2) {
 		return (1 - t) * s1 + t * s2;
 	}

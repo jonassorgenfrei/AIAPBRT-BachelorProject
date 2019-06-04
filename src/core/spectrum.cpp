@@ -38,13 +38,27 @@
 namespace pbrt {
 
 // Spectrum Method Definitions
-bool SpectrumSamplesSorted(const Float *lambda, const Float *vals, int n) {
-    for (int i = 0; i < n - 1; ++i)
-        if (lambda[i] > lambda[i + 1]) return false;
-    return true;
+
+/// <summary>
+/// Checks that the (lambda, v) values are sorted by wavelength.
+/// </summary>
+/// <param name="lambda">The wavelength array.</param>
+/// <param name="vals">The value array corresponding to the wavelength .</param>
+/// <param name="n">The number of values in the (lmbda, v) value array.</param>
+/// <returns></returns>
+bool SpectrumSamplesSorted(const Float* lambda, const Float* vals, int n) {
+	for (int i = 0; i < n - 1; ++i)
+		if (lambda[i] > lambda[i + 1]) return false;
+	return true;
 }
 
-void SortSpectrumSamples(Float *lambda, Float *vals, int n) {
+/// <summary>
+/// Sorts the spectrum samples by wavelength.
+/// </summary>
+/// <param name="lambda">The wavelength array.</param>
+/// <param name="vals">The value array corresponding to the wavelength .</param>
+/// <param name="n">The number of values in the (lmbda, v) value array.</param>
+void SortSpectrumSamples(Float* lambda, Float* vals, int n) {
     std::vector<std::pair<Float, Float>> sortVec;
     sortVec.reserve(n);
     for (int i = 0; i < n; ++i)
@@ -56,37 +70,79 @@ void SortSpectrumSamples(Float *lambda, Float *vals, int n) {
     }
 }
 
-Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n,
+/// <summary>
+/// Computes the average of the piecewise linear function over the range
+/// of wavelengths that each SPD sample is responsible for
+/// NOTE: it requires that the (lambda, value) values are
+/// </summary>
+/// <param name="lambda">The wavelength.</param>
+/// <param name="vals">The value corresponding to the wavelength.</param>
+/// <param name="n">The number of (lambda, value) samples.</param>
+/// <param name="lambdaStart">The lower bound of the wavelength range.</param>
+/// <param name="lambdaEnd">The upper bound of the wavelength range.</param>
+/// <returns></returns>
+Float AverageSpectrumSamples(const Float* lambda, const Float* vals, int n,
                              Float lambdaStart, Float lambdaEnd) {
-    for (int i = 0; i < n - 1; ++i) CHECK_GT(lambda[i + 1], lambda[i]);
+    
+	for (int i = 0; i < n - 1; ++i) 
+		CHECK_GT(lambda[i + 1], lambda[i]);
     CHECK_LT(lambdaStart, lambdaEnd);
-    // Handle cases with out-of-bounds range or single sample only
-    if (lambdaEnd <= lambda[0]) return vals[0];
-    if (lambdaStart >= lambda[n - 1]) return vals[n - 1];
-    if (n == 1) return vals[0];
-    Float sum = 0;
+    
+	// Handle cases with out-of-bounds range or single sample only
+    if (lambdaEnd <= lambda[0]) 
+		return vals[0];
+    
+	if (lambdaStart >= lambda[n - 1]) 
+		return vals[n - 1];
+    
+	if (n == 1) 
+		return vals[0];
+    
+	Float sum = 0;
     // Add contributions of constant segments before/after samples
-    if (lambdaStart < lambda[0]) sum += vals[0] * (lambda[0] - lambdaStart);
+	// chek if part of the range to average over goes beyond the first
+	// and/or last sample value.
+	// if so==> accumulate the contribution of the constant segment(s)
+	// scaled by the out-of-bounds wavelength range
+    if (lambdaStart < lambda[0]) 
+		sum += vals[0] * 
+				(lambda[0] - lambdaStart);	//out-of-bounds wavelength range
+
     if (lambdaEnd > lambda[n - 1])
         sum += vals[n - 1] * (lambdaEnd - lambda[n - 1]);
 
     // Advance to first relevant wavelength segment
-    int i = 0;
-    while (lambdaStart > lambda[i + 1]) ++i;
+    int i = 0;	// starting point
+    while (lambdaStart > lambda[i + 1])		// linear search.
+		++i;
     CHECK_LT(i + 1, n);
 
     // Loop over wavelength sample segments and add contributions
+	
+	// lambda function that linearly interpolates between the two 
+	// endpoints at the given wavelength
     auto interp = [lambda, vals](Float w, int i) {
         return Lerp((w - lambda[i]) / (lambda[i + 1] - lambda[i]), vals[i],
                     vals[i + 1]);
     };
+	// iterate over each segment that is partially or fully within the range 
+	// of wavelengths ([lambdaStart, lambdaEnd])
     for (; i + 1 < n && lambdaEnd >= lambda[i]; ++i) {
-        Float segLambdaStart = std::max(lambdaStart, lambda[i]);
-        Float segLambdaEnd = std::min(lambdaEnd, lambda[i + 1]);
+
+		// wavelength range [segLambdaStart, segLambdaEnd]
+		// compute the wavelength range to average over within the segment
+		// note: that they naturally handle the cases where lambdaStart, 
+		// lambdaEnd, or both of them are within the current segment
+        Float segLambdaStart = std::max(lambdaStart, lambda[i]);	// points to average the values
+        Float segLambdaEnd = std::min(lambdaEnd, lambda[i + 1]);	// points to average the values
+		
+																	// compute the average value over its range, scales the average by
+		// the wavelength range the segment covers and accumulates a sum of 
+		// these values.
         sum += 0.5 * (interp(segLambdaStart, i) + interp(segLambdaEnd, i)) *
                (segLambdaEnd - segLambdaStart);
     }
-    return sum / (lambdaEnd - lambdaStart);
+    return sum / (lambdaEnd - lambdaStart);	// sum divided by the total wavelength range
 }
 
 RGBSpectrum SampledSpectrum::ToRGBSpectrum() const {
@@ -936,6 +992,7 @@ const Float CIE_lambda[nCIESamples] = {
     795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809,
     810, 811, 812, 813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 824,
     825, 826, 827, 828, 829, 830};
+
 void Blackbody(const Float *lambda, int n, Float T, Float *Le) {
     if (T <= 0) {
         for (int i = 0; i < n; ++i) Le[i] = 0.f;
