@@ -156,30 +156,30 @@ SampledSpectrum SampledSpectrum::FromRGB(const Float rgb[3],
     SampledSpectrum r;
     if (type == SpectrumType::Reflectance) {
         // Convert reflectance spectrum to RGB
-        if (rgb[0] <= rgb[1] && rgb[0] <= rgb[2]) {
+        if (rgb[0] <= rgb[1] && rgb[0] <= rgb[2]) {	// if red channel is the smallest
             // Compute reflectance _SampledSpectrum_ with _rgb[0]_ as minimum
-            r += rgb[0] * rgbRefl2SpectWhite;
-            if (rgb[1] <= rgb[2]) {
-                r += (rgb[1] - rgb[0]) * rgbRefl2SpectCyan;
-                r += (rgb[2] - rgb[1]) * rgbRefl2SpectBlue;
+            r += rgb[0] * rgbRefl2SpectWhite;	// start with assining the white spectrum in rgbRefl2SpectWhites
+            if (rgb[1] <= rgb[2]) {	// check if green channel is smaller than blue channel
+                r += (rgb[1] - rgb[0]) * rgbRefl2SpectCyan;		// g-r
+                r += (rgb[2] - rgb[1]) * rgbRefl2SpectBlue;		// b-g
             } else {
-                r += (rgb[2] - rgb[0]) * rgbRefl2SpectCyan;
-                r += (rgb[1] - rgb[2]) * rgbRefl2SpectGreen;
+                r += (rgb[2] - rgb[0]) * rgbRefl2SpectCyan;		// b-r
+                r += (rgb[1] - rgb[2]) * rgbRefl2SpectGreen;	// g-b
             }
-        } else if (rgb[1] <= rgb[0] && rgb[1] <= rgb[2]) {
+        } else if (rgb[1] <= rgb[0] && rgb[1] <= rgb[2]) {	// if green channel is the smallest
             // Compute reflectance _SampledSpectrum_ with _rgb[1]_ as minimum
             r += rgb[1] * rgbRefl2SpectWhite;
-            if (rgb[0] <= rgb[2]) {
+            if (rgb[0] <= rgb[2]) {		// check if red channel is smaller than blue channel
                 r += (rgb[0] - rgb[1]) * rgbRefl2SpectMagenta;
                 r += (rgb[2] - rgb[0]) * rgbRefl2SpectBlue;
             } else {
                 r += (rgb[2] - rgb[1]) * rgbRefl2SpectMagenta;
                 r += (rgb[0] - rgb[2]) * rgbRefl2SpectRed;
             }
-        } else {
+        } else {	// if blue channel is the smallest
             // Compute reflectance _SampledSpectrum_ with _rgb[2]_ as minimum
             r += rgb[2] * rgbRefl2SpectWhite;
-            if (rgb[0] <= rgb[1]) {
+            if (rgb[0] <= rgb[1]) {		// check if red channel is smaller than green channel
                 r += (rgb[0] - rgb[2]) * rgbRefl2SpectYellow;
                 r += (rgb[1] - rgb[0]) * rgbRefl2SpectGreen;
             } else {
@@ -228,8 +228,8 @@ SampledSpectrum SampledSpectrum::FromRGB(const Float rgb[3],
 
 SampledSpectrum::SampledSpectrum(const RGBSpectrum &r, SpectrumType t) {
     Float rgb[3];
-    r.ToRGB(rgb);
-    *this = SampledSpectrum::FromRGB(rgb, t);
+    r.ToRGB(rgb);	// converting value to rgb
+    *this = SampledSpectrum::FromRGB(rgb, t);	// converting rgb to SPDs
 }
 
 Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals, int n,
@@ -1025,6 +1025,9 @@ SampledSpectrum SampledSpectrum::X;
 SampledSpectrum SampledSpectrum::Y;
 SampledSpectrum SampledSpectrum::Z;
 SampledSpectrum SampledSpectrum::rgbRefl2SpectWhite;
+/// <summary>
+/// The RGB refl2 spect cyan{CC2D43FA-BBC4-448A-9D0B-7B57ADF2655C}
+/// </summary>
 SampledSpectrum SampledSpectrum::rgbRefl2SpectCyan;
 SampledSpectrum SampledSpectrum::rgbRefl2SpectMagenta;
 SampledSpectrum SampledSpectrum::rgbRefl2SpectYellow;
