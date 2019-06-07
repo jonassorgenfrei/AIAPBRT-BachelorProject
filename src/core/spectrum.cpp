@@ -232,15 +232,31 @@ SampledSpectrum::SampledSpectrum(const RGBSpectrum &r, SpectrumType t) {
     *this = SampledSpectrum::FromRGB(rgb, t);	// converting rgb to SPDs
 }
 
-Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals, int n,
+/// <summary>
+/// Linearly interpolate the SPD between the two sample values that bracket lambda at the given wavelength.
+/// </summary>
+/// <param name="lambda">The wavelengths lambda.</param>
+/// <param name="vals">The valuescorresponding to the wavelengths.</param>
+/// <param name="n">The amount of wavelength-value pairs.</param>
+/// <param name="l">The specified wavelength lamda.</param>
+/// <returns>The value of the SPD at the given wavelength lambda.</returns>
+Float InterpolateSpectrumSamples(const Float* lambda, const Float* vals, int n,
                                  Float l) {
-    for (int i = 0; i < n - 1; ++i) CHECK_GT(lambda[i + 1], lambda[i]);
-    if (l <= lambda[0]) return vals[0];
-    if (l >= lambda[n - 1]) return vals[n - 1];
+    
+	for (int i = 0; i < n - 1; ++i) 
+		CHECK_GT(lambda[i + 1], lambda[i]);
+    if (l <= lambda[0]) 
+		return vals[0];
+    if (l >= lambda[n - 1]) 
+		return vals[n - 1];
+	// perform a binary search through the sorted wavelength array to find the interval containing 1
     int offset = FindInterval(n, [&](int index) { return lambda[index] <= l; });
+
     CHECK(l >= lambda[offset] && l <= lambda[offset + 1]);
+
     Float t = (l - lambda[offset]) / (lambda[offset + 1] - lambda[offset]);
-    return Lerp(t, vals[offset], vals[offset + 1]);
+	// linear interpolate between values
+    return Lerp(t, vals[offset], vals[offset + 1]);	
 }
 
 const Float CIE_X[nCIESamples] = {
@@ -1026,7 +1042,7 @@ SampledSpectrum SampledSpectrum::Y;
 SampledSpectrum SampledSpectrum::Z;
 SampledSpectrum SampledSpectrum::rgbRefl2SpectWhite;
 /// <summary>
-/// The RGB refl2 spect cyan{CC2D43FA-BBC4-448A-9D0B-7B57ADF2655C}
+/// The RGB refl2 spect cyan
 /// </summary>
 SampledSpectrum SampledSpectrum::rgbRefl2SpectCyan;
 SampledSpectrum SampledSpectrum::rgbRefl2SpectMagenta;
@@ -1139,6 +1155,7 @@ const Float RGBRefl2SpectBlue[nRGB2SpectSamples] = {
     4.9489586408030833e-02,  4.9595992290102905e-02,  4.9814819505812249e-02,
     3.9840911064978023e-02,  3.0501024937233868e-02,  2.1243054765241080e-02,
     6.9596532104356399e-03,  4.1733649330980525e-03};
+
 const Float RGBIllum2SpectWhite[nRGB2SpectSamples] = {
     1.1565232050369776e+00, 1.1567225000119139e+00, 1.1566203150243823e+00,
     1.1555782088080084e+00, 1.1562175509215700e+00, 1.1567674012207332e+00,

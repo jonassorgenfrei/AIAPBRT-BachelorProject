@@ -759,7 +759,9 @@ namespace pbrt {
 	};
 
 	/// <summary>
-	/// More efficient but less accurate Representation of SPD
+	/// Representtion of SPDs with weighted sum of red, green and blue components.
+	/// It uses 3 components to store the SPD.
+	/// More efficient but less accurate Representation of SPD.
 	/// </summary>
 	/// <seealso cref="CoefficientSpectrum{3}" />
 	class RGBSpectrum : public CoefficientSpectrum<3> {
@@ -767,12 +769,34 @@ namespace pbrt {
 
 	public:
 		// RGBSpectrum Public Methods
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RGBSpectrum"/> class.
+		/// </summary>
+		/// <param name="v">The v.</param>
 		RGBSpectrum(Float v = 0.f) : CoefficientSpectrum<3>(v) {}
-		RGBSpectrum(const CoefficientSpectrum<3>& v) : CoefficientSpectrum<3>(v) {}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RGBSpectrum"/> class.
+		/// </summary>
+		/// <param name="v">The v.</param>
+		RGBSpectrum(const CoefficientSpectrum<3> & v) : CoefficientSpectrum<3>(v) {}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RGBSpectrum"/> class.
+		/// </summary>
+		/// <param name="s">The s.</param>
+		/// <param name="type">Enumeration value whether the RGB value represents surface reflactance or an illuminant.</param>
 		RGBSpectrum(const RGBSpectrum& s,
 			SpectrumType type = SpectrumType::Reflectance) {
 			*this = s;
 		}
+
+		/// <summary>
+		/// Convert from RGB to SPD.
+		/// </summary>
+		/// <param name="rgb">The RGB.</param>
+		/// <param name="type">Enumeration value whether the RGB value represents surface reflactance or an illuminant.</param>
+		/// <returns>The Spectrum (SPDs)</returns>
 		static RGBSpectrum FromRGB(const Float rgb[3],
 			SpectrumType type = SpectrumType::Reflectance) {
 			RGBSpectrum s;
@@ -782,23 +806,62 @@ namespace pbrt {
 			DCHECK(!s.HasNaNs());
 			return s;
 		}
+
+		
+		/// <summary>
+		/// Converts to the Spectrum representation to RGB-Spectrum values.
+		/// </summary>
+		/// <param name="rgb">The RGB-Spectrum</param>
 		void ToRGB(Float* rgb) const {
 			rgb[0] = c[0];
 			rgb[1] = c[1];
 			rgb[2] = c[2];
 		}
+
+		/// <summary>
+		/// Converts the spectraum representation to an RGBSpectrum object.
+		/// </summary>
+		/// <param name="rgb">The RGB.</param>
 		const RGBSpectrum& ToRGBSpectrum() const { return *this; }
+		
+		/// <summary>
+		/// Converts to XYZ-Values.
+		/// </summary>
+		/// <param name="xyz">The xyz-Values</param>
 		void ToXYZ(Float xyz[3]) const { RGBToXYZ(c, xyz); }
+		
+		/// <summary>
+		/// Converts from XYZ Values to RGB Values.
+		/// </summary>
+		/// <param name="xyz">The xyz-values.</param>
+		/// <param name="type">Enumeration value whether the RGB value represents surface reflactance or an illuminant.</param>
+		/// <returns>The RGB Spectrum</returns>
 		static RGBSpectrum FromXYZ(const Float xyz[3],
 			SpectrumType type = SpectrumType::Reflectance) {
 			RGBSpectrum r;
 			XYZToRGB(xyz, r.c);
 			return r;
 		}
+
+		/// <summary>
+		/// Computes the y alone.
+		/// The y-coefficient of XYZ color is closely related to luminance, which measures the preceived 
+		/// brightness of a color.
+		/// </summary>
+		/// <returns>The y-coefficient</returns>
 		Float y() const {
 			const Float YWeight[3] = { 0.212671f, 0.715160f, 0.072169f };
 			return YWeight[0] * c[0] + YWeight[1] * c[1] + YWeight[2] * c[2];
 		}
+
+		/// <summary>
+		/// Create an RGB Spectrum from an arbitrary sampled SPD.
+		/// Converts the spectrum to XYZ and then to RGB.
+		/// </summary>
+		/// <param name="lambda">The lambda.</param>
+		/// <param name="v">The v.</param>
+		/// <param name="n">The n.</param>
+		/// <returns></returns>
 		static RGBSpectrum FromSampled(const Float* lambda, const Float* v, int n) {
 			// Sort samples if unordered, use sorted for returned spectrum
 			if (!SpectrumSamplesSorted(lambda, v, n)) {
@@ -808,8 +871,9 @@ namespace pbrt {
 				return FromSampled(&slambda[0], &sv[0], n);
 			}
 			Float xyz[3] = { 0, 0, 0 };
-			for (int i = 0; i < nCIESamples; ++i) {
+			for (int i = 0; i < nCIESamples; ++i) {	// evaluate piecewise linear sampled spectrum at 1-nm steps
 				Float val = InterpolateSpectrumSamples(lambda, v, n, CIE_lambda[i]);
+				// compute the Riemann sum to approximate the XYZ integrals
 				xyz[0] += val * CIE_X[i];
 				xyz[1] += val * CIE_Y[i];
 				xyz[2] += val * CIE_Z[i];
