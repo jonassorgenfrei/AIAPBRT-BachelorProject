@@ -30,41 +30,43 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
-
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// textures/uv.cpp*
+#include "textures/uv.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
-  public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+// UVTexture Method Definitions
+Texture<Float> *CreateUVFloatTexture(const Transform &tex2world,
+                                     const TextureParams &tp) {
+    return nullptr;
+}
 
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
-};
-
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+UVTexture *CreateUVSpectrumTexture(const Transform &tex2world,
+                                   const TextureParams &tp) {
+    // Initialize 2D texture mapping _map_ from _tp_
+    std::unique_ptr<TextureMapping2D> map;
+    std::string type = tp.FindString("mapping", "uv");
+    if (type == "uv") {
+        Float su = tp.FindFloat("uscale", 1.);
+        Float sv = tp.FindFloat("vscale", 1.);
+        Float du = tp.FindFloat("udelta", 0.);
+        Float dv = tp.FindFloat("vdelta", 0.);
+        map.reset(new UVMapping2D(su, sv, du, dv));
+    } else if (type == "spherical")
+        map.reset(new SphericalMapping2D(Inverse(tex2world)));
+    else if (type == "cylindrical")
+        map.reset(new CylindricalMapping2D(Inverse(tex2world)));
+    else if (type == "planar")
+        map.reset(new PlanarMapping2D(tp.FindVector3f("v1", Vector3f(1, 0, 0)),
+                                      tp.FindVector3f("v2", Vector3f(0, 1, 0)),
+                                      tp.FindFloat("udelta", 0.f),
+                                      tp.FindFloat("vdelta", 0.f)));
+    else {
+        Error("2D texture mapping \"%s\" unknown", type.c_str());
+        map.reset(new UVMapping2D);
+    }
+    return new UVTexture(std::move(map));
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_INTEGRATORS_WHITTED_H

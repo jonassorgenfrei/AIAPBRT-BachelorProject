@@ -35,36 +35,38 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_FILTERS_GAUSSIAN_H
+#define PBRT_FILTERS_GAUSSIAN_H
 
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// filters/gaussian.h*
+#include "filter.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// Gaussian Filter Declarations
+class GaussianFilter : public Filter {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // GaussianFilter Public Methods
+    GaussianFilter(const Vector2f &radius, Float alpha)
+        : Filter(radius),
+          alpha(alpha),
+          expX(std::exp(-alpha * radius.x * radius.x)),
+          expY(std::exp(-alpha * radius.y * radius.y)) {}
+    Float Evaluate(const Point2f &p) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // GaussianFilter Private Data
+    const Float alpha;
+    const Float expX, expY;
+
+    // GaussianFilter Utility Functions
+    Float Gaussian(Float d, Float expv) const {
+        return std::max((Float)0, Float(std::exp(-alpha * d * d) - expv));
+    }
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+GaussianFilter *CreateGaussianFilter(const ParamSet &ps);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_FILTERS_GAUSSIAN_H

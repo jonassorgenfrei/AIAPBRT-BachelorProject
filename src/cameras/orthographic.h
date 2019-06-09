@@ -35,36 +35,44 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_CAMERAS_ORTHOGRAPHIC_H
+#define PBRT_CAMERAS_ORTHOGRAPHIC_H
 
-// integrators/whitted.h*
+// cameras/orthographic.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "camera.h"
+#include "film.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// OrthographicCamera Declarations
+class OrthographicCamera : public ProjectiveCamera {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // OrthographicCamera Public Methods
+    OrthographicCamera(const AnimatedTransform &CameraToWorld,
+                       const Bounds2f &screenWindow, Float shutterOpen,
+                       Float shutterClose, Float lensRadius,
+                       Float focalDistance, Film *film, const Medium *medium)
+        : ProjectiveCamera(CameraToWorld, Orthographic(0, 1), screenWindow,
+                           shutterOpen, shutterClose, lensRadius, focalDistance,
+                           film, medium) {
+        // Compute differential changes in origin for orthographic camera rays
+        dxCamera = RasterToCamera(Vector3f(1, 0, 0));
+        dyCamera = RasterToCamera(Vector3f(0, 1, 0));
+    }
+    Float GenerateRay(const CameraSample &sample, Ray *) const;
+    Float GenerateRayDifferential(const CameraSample &sample,
+                                  RayDifferential *) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // OrthographicCamera Private Data
+    Vector3f dxCamera, dyCamera;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+OrthographicCamera *CreateOrthographicCamera(const ParamSet &params,
+                                             const AnimatedTransform &cam2world,
+                                             Film *film, const Medium *medium);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_CAMERAS_ORTHOGRAPHIC_H

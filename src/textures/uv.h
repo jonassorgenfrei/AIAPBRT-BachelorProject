@@ -35,36 +35,39 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_TEXTURES_UV_H
+#define PBRT_TEXTURES_UV_H
 
-// integrators/whitted.h*
+// textures/uv.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "texture.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// UVTexture Declarations
+class UVTexture : public Texture<Spectrum> {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // UVTexture Public Methods
+    UVTexture(std::unique_ptr<TextureMapping2D> mapping)
+        : mapping(std::move(mapping)) {}
+    Spectrum Evaluate(const SurfaceInteraction &si) const {
+        Vector2f dstdx, dstdy;
+        Point2f st = mapping->Map(si, &dstdx, &dstdy);
+        Float rgb[3] = {st[0] - std::floor(st[0]), st[1] - std::floor(st[1]),
+                        0};
+        return Spectrum::FromRGB(rgb);
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    std::unique_ptr<TextureMapping2D> mapping;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+Texture<Float> *CreateUVFloatTexture(const Transform &tex2world,
+                                     const TextureParams &tp);
+UVTexture *CreateUVSpectrumTexture(const Transform &tex2world,
+                                   const TextureParams &tp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_TEXTURES_UV_H

@@ -35,36 +35,40 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_TEXTURES_WINDY_H
+#define PBRT_TEXTURES_WINDY_H
 
-// integrators/whitted.h*
+// textures/windy.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "texture.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// WindyTexture Declarations
+template <typename T>
+class WindyTexture : public Texture<T> {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // WindyTexture Public Methods
+    WindyTexture(std::unique_ptr<TextureMapping3D> mapping)
+        : mapping(std::move(mapping)) {}
+    T Evaluate(const SurfaceInteraction &si) const {
+        Vector3f dpdx, dpdy;
+        Point3f P = mapping->Map(si, &dpdx, &dpdy);
+        Float windStrength = FBm(.1f * P, .1f * dpdx, .1f * dpdy, .5, 3);
+        Float waveHeight = FBm(P, dpdx, dpdy, .5, 6);
+        return std::abs(windStrength) * waveHeight;
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    std::unique_ptr<TextureMapping3D> mapping;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+WindyTexture<Float> *CreateWindyFloatTexture(const Transform &tex2world,
+                                             const TextureParams &tp);
+WindyTexture<Spectrum> *CreateWindySpectrumTexture(const Transform &tex2world,
+                                                   const TextureParams &tp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_TEXTURES_WINDY_H

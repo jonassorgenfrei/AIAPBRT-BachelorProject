@@ -35,36 +35,39 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_FILTERS_MITCHELL_H
+#define PBRT_FILTERS_MITCHELL_H
 
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// filters/mitchell.h*
+#include "filter.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// Mitchell Filter Declarations
+class MitchellFilter : public Filter {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // MitchellFilter Public Methods
+    MitchellFilter(const Vector2f &radius, Float B, Float C)
+        : Filter(radius), B(B), C(C) {}
+    Float Evaluate(const Point2f &p) const;
+    Float Mitchell1D(Float x) const {
+        x = std::abs(2 * x);
+        if (x > 1)
+            return ((-B - 6 * C) * x * x * x + (6 * B + 30 * C) * x * x +
+                    (-12 * B - 48 * C) * x + (8 * B + 24 * C)) *
+                   (1.f / 6.f);
+        else
+            return ((12 - 9 * B - 6 * C) * x * x * x +
+                    (-18 + 12 * B + 6 * C) * x * x + (6 - 2 * B)) *
+                   (1.f / 6.f);
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    const Float B, C;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MitchellFilter *CreateMitchellFilter(const ParamSet &ps);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_FILTERS_MITCHELL_H

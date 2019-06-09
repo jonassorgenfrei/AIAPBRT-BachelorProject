@@ -35,36 +35,41 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_INTEGRATORS_PATH_H
+#define PBRT_INTEGRATORS_PATH_H
 
-// integrators/whitted.h*
+// integrators/path.h*
 #include "pbrt.h"
 #include "integrator.h"
-#include "scene.h"
+#include "lightdistrib.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// PathIntegrator Declarations
+class PathIntegrator : public SamplerIntegrator {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
+    // PathIntegrator Public Methods
+    PathIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
+                   std::shared_ptr<Sampler> sampler,
+                   const Bounds2i &pixelBounds, Float rrThreshold = 1,
+                   const std::string &lightSampleStrategy = "spatial");
+
+    void Preprocess(const Scene &scene, Sampler &sampler);
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
 
   private:
-    // WhittedIntegrator Private Data
+    // PathIntegrator Private Data
     const int maxDepth;
+    const Float rrThreshold;
+    const std::string lightSampleStrategy;
+    std::unique_ptr<LightDistribution> lightDistribution;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+PathIntegrator *CreatePathIntegrator(const ParamSet &params,
+                                     std::shared_ptr<Sampler> sampler,
+                                     std::shared_ptr<const Camera> camera);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_INTEGRATORS_PATH_H

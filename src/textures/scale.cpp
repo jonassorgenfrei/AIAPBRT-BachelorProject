@@ -30,41 +30,24 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
-
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// textures/scale.cpp*
+#include "textures/scale.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
-  public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+// ScaleTexture Method Definitions
+ScaleTexture<Float, Float> *CreateScaleFloatTexture(const Transform &tex2world,
+                                                    const TextureParams &tp) {
+    return new ScaleTexture<Float, Float>(tp.GetFloatTexture("tex1", 1.f),
+                                          tp.GetFloatTexture("tex2", 1.f));
+}
 
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
-};
-
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+ScaleTexture<Spectrum, Spectrum> *CreateScaleSpectrumTexture(
+    const Transform &tex2world, const TextureParams &tp) {
+    return new ScaleTexture<Spectrum, Spectrum>(
+        tp.GetSpectrumTexture("tex1", Spectrum(1.f)),
+        tp.GetSpectrumTexture("tex2", Spectrum(1.f)));
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_INTEGRATORS_WHITTED_H

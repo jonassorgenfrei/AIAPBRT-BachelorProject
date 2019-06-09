@@ -35,36 +35,43 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_CAMERAS_PERSPECTIVE_H
+#define PBRT_CAMERAS_PERSPECTIVE_H
 
-// integrators/whitted.h*
+// cameras/perspective.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "camera.h"
+#include "film.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// PerspectiveCamera Declarations
+class PerspectiveCamera : public ProjectiveCamera {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // PerspectiveCamera Public Methods
+    PerspectiveCamera(const AnimatedTransform &CameraToWorld,
+                      const Bounds2f &screenWindow, Float shutterOpen,
+                      Float shutterClose, Float lensRadius, Float focalDistance,
+                      Float fov, Film *film, const Medium *medium);
+    Float GenerateRay(const CameraSample &sample, Ray *) const;
+    Float GenerateRayDifferential(const CameraSample &sample,
+                                  RayDifferential *ray) const;
+    Spectrum We(const Ray &ray, Point2f *pRaster2 = nullptr) const;
+    void Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const;
+    Spectrum Sample_Wi(const Interaction &ref, const Point2f &sample,
+                       Vector3f *wi, Float *pdf, Point2f *pRaster,
+                       VisibilityTester *vis) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // PerspectiveCamera Private Data
+    Vector3f dxCamera, dyCamera;
+    Float A;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,
+                                           const AnimatedTransform &cam2world,
+                                           Film *film, const Medium *medium);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_CAMERAS_PERSPECTIVE_H

@@ -35,36 +35,37 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_MATERIALS_MIXMAT_H
+#define PBRT_MATERIALS_MIXMAT_H
 
-// integrators/whitted.h*
+// materials/mixmat.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "material.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// MixMaterial Declarations
+class MixMaterial : public Material {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // MixMaterial Public Methods
+    MixMaterial(const std::shared_ptr<Material> &m1,
+                const std::shared_ptr<Material> &m2,
+                const std::shared_ptr<Texture<Spectrum>> &scale)
+        : m1(m1), m2(m2), scale(scale) {}
+    void ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena,
+                                    TransportMode mode,
+                                    bool allowMultipleLobes) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // MixMaterial Private Data
+    std::shared_ptr<Material> m1, m2;
+    std::shared_ptr<Texture<Spectrum>> scale;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MixMaterial *CreateMixMaterial(const TextureParams &mp,
+                               const std::shared_ptr<Material> &m1,
+                               const std::shared_ptr<Material> &m2);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_MATERIALS_MIXMAT_H

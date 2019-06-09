@@ -35,36 +35,42 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_TEXTURES_BILERP_H
+#define PBRT_TEXTURES_BILERP_H
 
-// integrators/whitted.h*
+// textures/bilerp.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "texture.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// BilerpTexture Declarations
+template <typename T>
+class BilerpTexture : public Texture<T> {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // BilerpTexture Public Methods
+    BilerpTexture(std::unique_ptr<TextureMapping2D> mapping, const T &v00,
+                  const T &v01, const T &v10, const T &v11)
+        : mapping(std::move(mapping)), v00(v00), v01(v01), v10(v10), v11(v11) {}
+    T Evaluate(const SurfaceInteraction &si) const {
+        Vector2f dstdx, dstdy;
+        Point2f st = mapping->Map(si, &dstdx, &dstdy);
+        return (1 - st[0]) * (1 - st[1]) * v00 + (1 - st[0]) * (st[1]) * v01 +
+               (st[0]) * (1 - st[1]) * v10 + (st[0]) * (st[1]) * v11;
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // BilerpTexture Private Data
+    std::unique_ptr<TextureMapping2D> mapping;
+    const T v00, v01, v10, v11;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+BilerpTexture<Float> *CreateBilerpFloatTexture(const Transform &tex2world,
+                                               const TextureParams &tp);
+BilerpTexture<Spectrum> *CreateBilerpSpectrumTexture(const Transform &tex2world,
+                                                     const TextureParams &tp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_TEXTURES_BILERP_H

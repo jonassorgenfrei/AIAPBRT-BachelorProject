@@ -35,36 +35,41 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_MATERIALS_METAL_H
+#define PBRT_MATERIALS_METAL_H
 
-// integrators/whitted.h*
+// materials/metal.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "material.h"
+#include "spectrum.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// MetalMaterial Declarations
+class MetalMaterial : public Material {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // MetalMaterial Public Methods
+    MetalMaterial(const std::shared_ptr<Texture<Spectrum>> &eta,
+                  const std::shared_ptr<Texture<Spectrum>> &k,
+                  const std::shared_ptr<Texture<Float>> &rough,
+                  const std::shared_ptr<Texture<Float>> &urough,
+                  const std::shared_ptr<Texture<Float>> &vrough,
+                  const std::shared_ptr<Texture<Float>> &bump,
+                  bool remapRoughness);
+    void ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena,
+                                    TransportMode mode,
+                                    bool allowMultipleLobes) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // MetalMaterial Private Data
+    std::shared_ptr<Texture<Spectrum>> eta, k;
+    std::shared_ptr<Texture<Float>> roughness, uRoughness, vRoughness;
+    std::shared_ptr<Texture<Float>> bumpMap;
+    bool remapRoughness;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MetalMaterial *CreateMetalMaterial(const TextureParams &mp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_MATERIALS_METAL_H

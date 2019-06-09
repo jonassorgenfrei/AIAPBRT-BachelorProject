@@ -30,41 +30,20 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
-
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// filters/box.cpp*
+#include "filters/box.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
-  public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+// Box Filter Method Definitions
+Float BoxFilter::Evaluate(const Point2f &p) const { return 1.; }
 
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
-};
-
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+BoxFilter *CreateBoxFilter(const ParamSet &ps) {
+    Float xw = ps.FindOneFloat("xwidth", 0.5f);
+    Float yw = ps.FindOneFloat("ywidth", 0.5f);
+    return new BoxFilter(Vector2f(xw, yw));
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_INTEGRATORS_WHITTED_H

@@ -35,36 +35,47 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_LIGHTS_DISTANT_H
+#define PBRT_LIGHTS_DISTANT_H
 
-// integrators/whitted.h*
+// lights/distant.h*
 #include "pbrt.h"
-#include "integrator.h"
+#include "light.h"
+#include "shape.h"
 #include "scene.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// DistantLight Declarations
+class DistantLight : public Light {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // DistantLight Public Methods
+    DistantLight(const Transform &LightToWorld, const Spectrum &L,
+                 const Vector3f &w);
+    void Preprocess(const Scene &scene) {
+        scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+    }
+    Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
+                       Float *pdf, VisibilityTester *vis) const;
+    Spectrum Power() const;
+    Float Pdf_Li(const Interaction &, const Vector3f &) const;
+    Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                       Ray *ray, Normal3f *nLight, Float *pdfPos,
+                       Float *pdfDir) const;
+    void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
+                Float *pdfDir) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // DistantLight Private Data
+    const Spectrum L;
+    const Vector3f wLight;
+    Point3f worldCenter;
+    Float worldRadius;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+std::shared_ptr<DistantLight> CreateDistantLight(const Transform &light2world,
+                                                 const ParamSet &paramSet);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_LIGHTS_DISTANT_H

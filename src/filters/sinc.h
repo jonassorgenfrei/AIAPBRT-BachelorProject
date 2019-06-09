@@ -35,36 +35,39 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_FILTERS_SINC_H
+#define PBRT_FILTERS_SINC_H
 
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// filters/sinc.h*
+#include "filter.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// Sinc Filter Declarations
+class LanczosSincFilter : public Filter {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // LanczosSincFilter Public Methods
+    LanczosSincFilter(const Vector2f &radius, Float tau)
+        : Filter(radius), tau(tau) {}
+    Float Evaluate(const Point2f &p) const;
+    Float Sinc(Float x) const {
+        x = std::abs(x);
+        if (x < 1e-5) return 1;
+        return std::sin(Pi * x) / (Pi * x);
+    }
+    Float WindowedSinc(Float x, Float radius) const {
+        x = std::abs(x);
+        if (x > radius) return 0;
+        Float lanczos = Sinc(x / tau);
+        return Sinc(x) * lanczos;
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    const Float tau;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+LanczosSincFilter *CreateSincFilter(const ParamSet &ps);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_FILTERS_SINC_H

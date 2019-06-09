@@ -31,20 +31,39 @@
  */
 
 
-// integrators/whitted.cpp*
-#include "integrators/whitted.h"
+// integrators/directlighting.cpp*
+#include "integrators/directlighting.h"
 #include "interaction.h"
+#include "paramset.h"
 #include "camera.h"
 #include "film.h"
-#include "paramset.h"
+#include "stats.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Method Definitions
-Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
-                               Sampler &sampler, MemoryArena &arena,
-                               int depth) const {
-    Spectrum L(0.);
+// DirectLightingIntegrator Method Definitions
+void DirectLightingIntegrator::Preprocess(const Scene &scene,
+                                          Sampler &sampler) {
+    if (strategy == LightStrategy::UniformSampleAll) {
+        // Compute number of samples to use for each light
+        for (const auto &light : scene.lights)
+            nLightSamples.push_back(sampler.RoundCount(light->nSamples));
+
+        // Request samples for sampling all lights
+        for (int i = 0; i < maxDepth; ++i) {
+            for (size_t j = 0; j < scene.lights.size(); ++j) {
+                sampler.Request2DArray(nLightSamples[j]);
+                sampler.Request2DArray(nLightSamples[j]);
+            }
+        }
+    }
+}
+
+Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
+                                      const Scene &scene, Sampler &sampler,
+                                      MemoryArena &arena, int depth) const {
+    ProfilePhase p(Prof::SamplerIntegratorLi);
+    Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
     if (!scene.Intersect(ray, &isect)) {
@@ -52,31 +71,20 @@ Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
         return L;
     }
 
-    // Compute emitted and reflected light at ray intersection point
-
-    // Initialize common variables for Whitted integrator
-    const Normal3f &n = isect.shading.n;
-    Vector3f wo = isect.wo;
-
     // Compute scattering functions for surface interaction
     isect.ComputeScatteringFunctions(ray, arena);
     if (!isect.bsdf)
         return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
-
+    Vector3f wo = isect.wo;
     // Compute emitted light if ray hit an area light source
     L += isect.Le(wo);
-
-    // Add contribution of each light source
-    for (const auto &light : scene.lights) {
-        Vector3f wi;
-        Float pdf;
-        VisibilityTester visibility;
-        Spectrum Li =
-            light->Sample_Li(isect, sampler.Get2D(), &wi, &pdf, &visibility);
-        if (Li.IsBlack() || pdf == 0) continue;
-        Spectrum f = isect.bsdf->f(wo, wi);
-        if (!f.IsBlack() && visibility.Unoccluded(scene))
-            L += f * Li * AbsDot(wi, n) / pdf;
+    if (scene.lights.size() > 0) {
+        // Compute direct lighting for _DirectLightingIntegrator_ integrator
+        if (strategy == LightStrategy::UniformSampleAll)
+            L += UniformSampleAllLights(isect, scene, arena, sampler,
+                                        nLightSamples);
+        else
+            L += UniformSampleOneLight(isect, scene, arena, sampler);
     }
     if (depth + 1 < maxDepth) {
         // Trace rays for specular reflection and refraction
@@ -86,10 +94,23 @@ Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
     return L;
 }
 
-WhittedIntegrator *CreateWhittedIntegrator(
+DirectLightingIntegrator *CreateDirectLightingIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
+    LightStrategy strategy;
+    std::string st = params.FindOneString("strategy", "all");
+    if (st == "one")
+        strategy = LightStrategy::UniformSampleOne;
+    else if (st == "all")
+        strategy = LightStrategy::UniformSampleAll;
+    else {
+        Warning(
+            "Strategy \"%s\" for direct lighting unknown. "
+            "Using \"all\".",
+            st.c_str());
+        strategy = LightStrategy::UniformSampleAll;
+    }
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);
     Bounds2i pixelBounds = camera->film->GetSampleBounds();
@@ -104,7 +125,8 @@ WhittedIntegrator *CreateWhittedIntegrator(
                 Error("Degenerate \"pixelbounds\" specified.");
         }
     }
-    return new WhittedIntegrator(maxDepth, camera, sampler, pixelBounds);
+    return new DirectLightingIntegrator(strategy, maxDepth, camera, sampler,
+                                        pixelBounds);
 }
 
 }  // namespace pbrt

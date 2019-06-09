@@ -35,36 +35,42 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_TEXTURES_WRINKLED_H
+#define PBRT_TEXTURES_WRINKLED_H
 
-// integrators/whitted.h*
+// textures/wrinkled.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "texture.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// WrinkledTexture Declarations
+template <typename T>
+class WrinkledTexture : public Texture<T> {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // WrinkledTexture Public Methods
+    WrinkledTexture(std::unique_ptr<TextureMapping3D> mapping, int octaves,
+                    Float omega)
+        : mapping(std::move(mapping)), octaves(octaves), omega(omega) {}
+    T Evaluate(const SurfaceInteraction &si) const {
+        Vector3f dpdx, dpdy;
+        Point3f p = mapping->Map(si, &dpdx, &dpdy);
+        return Turbulence(p, dpdx, dpdy, omega, octaves);
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // WrinkledTexture Private Data
+    std::unique_ptr<TextureMapping3D> mapping;
+    int octaves;
+    Float omega;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+WrinkledTexture<Float> *CreateWrinkledFloatTexture(const Transform &tex2world,
+                                                   const TextureParams &tp);
+WrinkledTexture<Spectrum> *CreateWrinkledSpectrumTexture(
+    const Transform &tex2world, const TextureParams &tp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_TEXTURES_WRINKLED_H

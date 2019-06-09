@@ -35,36 +35,45 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_INTEGRATORS_DIRECTLIGHTING_H
+#define PBRT_INTEGRATORS_DIRECTLIGHTING_H
 
-// integrators/whitted.h*
+// integrators/directlighting.h*
 #include "pbrt.h"
 #include "integrator.h"
 #include "scene.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// LightStrategy Declarations
+enum class LightStrategy { UniformSampleAll, UniformSampleOne };
+
+// DirectLightingIntegrator Declarations
+class DirectLightingIntegrator : public SamplerIntegrator {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
+    // DirectLightingIntegrator Public Methods
+    DirectLightingIntegrator(LightStrategy strategy, int maxDepth,
+                             std::shared_ptr<const Camera> camera,
+                             std::shared_ptr<Sampler> sampler,
+                             const Bounds2i &pixelBounds)
+        : SamplerIntegrator(camera, sampler, pixelBounds),
+          strategy(strategy),
+          maxDepth(maxDepth) {}
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
+    void Preprocess(const Scene &scene, Sampler &sampler);
 
   private:
-    // WhittedIntegrator Private Data
+    // DirectLightingIntegrator Private Data
+    const LightStrategy strategy;
     const int maxDepth;
+    std::vector<int> nLightSamples;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
+DirectLightingIntegrator *CreateDirectLightingIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_INTEGRATORS_DIRECTLIGHTING_H

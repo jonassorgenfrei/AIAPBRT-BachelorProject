@@ -35,36 +35,29 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_CAMERAS_ENVIRONMENT_H
+#define PBRT_CAMERAS_ENVIRONMENT_H
 
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// cameras/environment.h*
+#include "camera.h"
+#include "film.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// EnvironmentCamera Declarations
+class EnvironmentCamera : public Camera {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
-
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // EnvironmentCamera Public Methods
+    EnvironmentCamera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
+                      Float shutterClose, Film *film, const Medium *medium)
+        : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium) {}
+    Float GenerateRay(const CameraSample &sample, Ray *) const;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+EnvironmentCamera *CreateEnvironmentCamera(const ParamSet &params,
+                                           const AnimatedTransform &cam2world,
+                                           Film *film, const Medium *medium);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_CAMERAS_ENVIRONMENT_H

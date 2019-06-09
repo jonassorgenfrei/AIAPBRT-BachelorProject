@@ -35,36 +35,41 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_TEXTURES_FBM_H
+#define PBRT_TEXTURES_FBM_H
 
-// integrators/whitted.h*
+// textures/fbm.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "texture.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// FBmTexture Declarations
+template <typename T>
+class FBmTexture : public Texture<T> {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // FBmTexture Public Methods
+    FBmTexture(std::unique_ptr<TextureMapping3D> mapping, int octaves,
+               Float omega)
+        : mapping(std::move(mapping)), omega(omega), octaves(octaves) {}
+    T Evaluate(const SurfaceInteraction &si) const {
+        Vector3f dpdx, dpdy;
+        Point3f P = mapping->Map(si, &dpdx, &dpdy);
+        return FBm(P, dpdx, dpdy, omega, octaves);
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    std::unique_ptr<TextureMapping3D> mapping;
+    const Float omega;
+    const int octaves;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+FBmTexture<Float> *CreateFBmFloatTexture(const Transform &tex2world,
+                                         const TextureParams &tp);
+FBmTexture<Spectrum> *CreateFBmSpectrumTexture(const Transform &tex2world,
+                                               const TextureParams &tp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_TEXTURES_FBM_H

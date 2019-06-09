@@ -35,36 +35,33 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_MEDIA_HOMOGENEOUS_H
+#define PBRT_MEDIA_HOMOGENEOUS_H
 
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// media/homogeneous.h*
+#include "medium.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// HomogeneousMedium Declarations
+class HomogeneousMedium : public Medium {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // HomogeneousMedium Public Methods
+    HomogeneousMedium(const Spectrum &sigma_a, const Spectrum &sigma_s, Float g)
+        : sigma_a(sigma_a),
+          sigma_s(sigma_s),
+          sigma_t(sigma_s + sigma_a),
+          g(g) {}
+    Spectrum Tr(const Ray &ray, Sampler &sampler) const;
+    Spectrum Sample(const Ray &ray, Sampler &sampler, MemoryArena &arena,
+                    MediumInteraction *mi) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // HomogeneousMedium Private Data
+    const Spectrum sigma_a, sigma_s, sigma_t;
+    const Float g;
 };
-
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_MEDIA_HOMOGENEOUS_H

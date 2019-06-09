@@ -35,36 +35,37 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_MATERIALS_FOURIER_H
+#define PBRT_MATERIALS_FOURIER_H
 
-// integrators/whitted.h*
+// materials/fourier.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "material.h"
+#include "reflection.h"
+#include "interpolation.h"
+#include <map>
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// FourierMaterial Declarations
+class FourierMaterial : public Material {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // FourierMaterial Public Methods
+    FourierMaterial(const std::string &filename,
+                    const std::shared_ptr<Texture<Float>> &bump);
+    void ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena,
+                                    TransportMode mode,
+                                    bool allowMultipleLobes) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // FourierMaterial Private Data
+    FourierBSDFTable *bsdfTable;
+    std::shared_ptr<Texture<Float>> bumpMap;
+    static std::map<std::string, std::unique_ptr<FourierBSDFTable>> loadedBSDFs;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+FourierMaterial *CreateFourierMaterial(const TextureParams &mp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_MATERIALS_FOURIER_H

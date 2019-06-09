@@ -30,41 +30,25 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
-
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// filters/mitchell.cpp*
+#include "filters/mitchell.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
-  public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+// Mitchell Filter Method Definitions
+Float MitchellFilter::Evaluate(const Point2f &p) const {
+    return Mitchell1D(p.x * invRadius.x) * Mitchell1D(p.y * invRadius.y);
+}
 
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
-};
-
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MitchellFilter *CreateMitchellFilter(const ParamSet &ps) {
+    // Find common filter parameters
+    Float xw = ps.FindOneFloat("xwidth", 2.f);
+    Float yw = ps.FindOneFloat("ywidth", 2.f);
+    Float B = ps.FindOneFloat("B", 1.f / 3.f);
+    Float C = ps.FindOneFloat("C", 1.f / 3.f);
+    return new MitchellFilter(Vector2f(xw, yw), B, C);
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_INTEGRATORS_WHITTED_H

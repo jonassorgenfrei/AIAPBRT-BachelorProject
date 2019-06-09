@@ -35,36 +35,45 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_LIGHTS_POINT_H
+#define PBRT_LIGHTS_POINT_H
 
-// integrators/whitted.h*
+// lights/point.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "light.h"
+#include "shape.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// PointLight Declarations
+class PointLight : public Light {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // PointLight Public Methods
+    PointLight(const Transform &LightToWorld,
+               const MediumInterface &mediumInterface, const Spectrum &I)
+        : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
+          pLight(LightToWorld(Point3f(0, 0, 0))),
+          I(I) {}
+    Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
+                       Float *pdf, VisibilityTester *vis) const;
+    Spectrum Power() const;
+    Float Pdf_Li(const Interaction &, const Vector3f &) const;
+    Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                       Ray *ray, Normal3f *nLight, Float *pdfPos,
+                       Float *pdfDir) const;
+    void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
+                Float *pdfDir) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // PointLight Private Data
+    const Point3f pLight;
+    const Spectrum I;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+std::shared_ptr<PointLight> CreatePointLight(const Transform &light2world,
+                                             const Medium *medium,
+                                             const ParamSet &paramSet);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_LIGHTS_POINT_H

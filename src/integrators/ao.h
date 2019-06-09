@@ -35,36 +35,34 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_INTEGRATORS_AO_H
+#define PBRT_INTEGRATORS_AO_H
 
-// integrators/whitted.h*
+// integrators/ao.h*
 #include "pbrt.h"
 #include "integrator.h"
-#include "scene.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// AOIntegrator Declarations
+class AOIntegrator : public SamplerIntegrator {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
+    // AOIntegrator Public Methods
+    AOIntegrator(bool cosSample, int nSamples,
+                 std::shared_ptr<const Camera> camera,
+                 std::shared_ptr<Sampler> sampler,
+                 const Bounds2i &pixelBounds);
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
-
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+ private:
+    bool cosSample;
+    int nSamples;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+AOIntegrator *CreateAOIntegrator(const ParamSet &params,
+                                 std::shared_ptr<Sampler> sampler,
+                                 std::shared_ptr<const Camera> camera);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_INTEGRATORS_PATH_H

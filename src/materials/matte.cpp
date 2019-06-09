@@ -30,41 +30,44 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
-
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// materials/matte.cpp*
+#include "materials/matte.h"
+#include "paramset.h"
+#include "reflection.h"
+#include "interaction.h"
+#include "texture.h"
+#include "interaction.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
-  public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+// MatteMaterial Method Definitions
+void MatteMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
+                                               MemoryArena &arena,
+                                               TransportMode mode,
+                                               bool allowMultipleLobes) const {
+    // Perform bump mapping with _bumpMap_, if present
+    if (bumpMap) Bump(bumpMap, si);
 
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
-};
+    // Evaluate textures for _MatteMaterial_ material and allocate BRDF
+    si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
+    Spectrum r = Kd->Evaluate(*si).Clamp();
+    Float sig = Clamp(sigma->Evaluate(*si), 0, 90);
+    if (!r.IsBlack()) {
+        if (sig == 0)
+            si->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection)(r));
+        else
+            si->bsdf->Add(ARENA_ALLOC(arena, OrenNayar)(r, sig));
+    }
+}
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MatteMaterial *CreateMatteMaterial(const TextureParams &mp) {
+    std::shared_ptr<Texture<Spectrum>> Kd =
+        mp.GetSpectrumTexture("Kd", Spectrum(0.5f));
+    std::shared_ptr<Texture<Float>> sigma = mp.GetFloatTexture("sigma", 0.f);
+    std::shared_ptr<Texture<Float>> bumpMap =
+        mp.GetFloatTextureOrNull("bumpmap");
+    return new MatteMaterial(Kd, sigma, bumpMap);
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_INTEGRATORS_WHITTED_H

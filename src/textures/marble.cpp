@@ -30,41 +30,26 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
-
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// textures/marble.cpp*
+#include "textures/marble.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
-  public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+// MarbleTexture Method Definitions
+Texture<Float> *CreateMarbleFloatTexture(const Transform &tex2world,
+                                         const TextureParams &tp) {
+    return nullptr;
+}
 
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
-};
-
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MarbleTexture *CreateMarbleSpectrumTexture(const Transform &tex2world,
+                                           const TextureParams &tp) {
+    // Initialize 3D texture mapping _map_ from _tp_
+    std::unique_ptr<TextureMapping3D> map(new IdentityMapping3D(tex2world));
+    return new MarbleTexture(std::move(map), tp.FindInt("octaves", 8),
+                             tp.FindFloat("roughness", .5f),
+                             tp.FindFloat("scale", 1.f),
+                             tp.FindFloat("variation", .2f));
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_INTEGRATORS_WHITTED_H

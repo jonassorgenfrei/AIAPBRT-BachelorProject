@@ -35,36 +35,48 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_MATERIALS_GLASS_H
+#define PBRT_MATERIALS_GLASS_H
 
-// integrators/whitted.h*
+// materials/glass.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "material.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// GlassMaterial Declarations
+class GlassMaterial : public Material {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // GlassMaterial Public Methods
+    GlassMaterial(const std::shared_ptr<Texture<Spectrum>> &Kr,
+                  const std::shared_ptr<Texture<Spectrum>> &Kt,
+                  const std::shared_ptr<Texture<Float>> &uRoughness,
+                  const std::shared_ptr<Texture<Float>> &vRoughness,
+                  const std::shared_ptr<Texture<Float>> &index,
+                  const std::shared_ptr<Texture<Float>> &bumpMap,
+                  bool remapRoughness)
+        : Kr(Kr),
+          Kt(Kt),
+          uRoughness(uRoughness),
+          vRoughness(vRoughness),
+          index(index),
+          bumpMap(bumpMap),
+          remapRoughness(remapRoughness) {}
+    void ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena,
+                                    TransportMode mode,
+                                    bool allowMultipleLobes) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // GlassMaterial Private Data
+    std::shared_ptr<Texture<Spectrum>> Kr, Kt;
+    std::shared_ptr<Texture<Float>> uRoughness, vRoughness;
+    std::shared_ptr<Texture<Float>> index;
+    std::shared_ptr<Texture<Float>> bumpMap;
+    bool remapRoughness;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+GlassMaterial *CreateGlassMaterial(const TextureParams &mp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_MATERIALS_GLASS_H

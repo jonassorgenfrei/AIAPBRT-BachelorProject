@@ -35,36 +35,41 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_TEXTURES_MIX_H
+#define PBRT_TEXTURES_MIX_H
 
-// integrators/whitted.h*
+// textures/mix.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "texture.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// MixTexture Declarations
+template <typename T>
+class MixTexture : public Texture<T> {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // MixTexture Public Methods
+    MixTexture(const std::shared_ptr<Texture<T>> &tex1,
+               const std::shared_ptr<Texture<T>> &tex2,
+               const std::shared_ptr<Texture<Float>> &amount)
+        : tex1(tex1), tex2(tex2), amount(amount) {}
+    T Evaluate(const SurfaceInteraction &si) const {
+        T t1 = tex1->Evaluate(si), t2 = tex2->Evaluate(si);
+        Float amt = amount->Evaluate(si);
+        return (1 - amt) * t1 + amt * t2;
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    std::shared_ptr<Texture<T>> tex1, tex2;
+    std::shared_ptr<Texture<Float>> amount;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MixTexture<Float> *CreateMixFloatTexture(const Transform &tex2world,
+                                         const TextureParams &tp);
+MixTexture<Spectrum> *CreateMixSpectrumTexture(const Transform &tex2world,
+                                               const TextureParams &tp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_TEXTURES_MIX_H

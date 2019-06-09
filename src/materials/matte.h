@@ -35,36 +35,35 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_MATERIALS_MATTE_H
+#define PBRT_MATERIALS_MATTE_H
 
-// integrators/whitted.h*
+// materials/matte.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "material.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// MatteMaterial Declarations
+class MatteMaterial : public Material {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // MatteMaterial Public Methods
+    MatteMaterial(const std::shared_ptr<Texture<Spectrum>> &Kd,
+                  const std::shared_ptr<Texture<Float>> &sigma,
+                  const std::shared_ptr<Texture<Float>> &bumpMap)
+        : Kd(Kd), sigma(sigma), bumpMap(bumpMap) {}
+    void ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena,
+                                    TransportMode mode,
+                                    bool allowMultipleLobes) const;
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // MatteMaterial Private Data
+    std::shared_ptr<Texture<Spectrum>> Kd;
+    std::shared_ptr<Texture<Float>> sigma, bumpMap;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MatteMaterial *CreateMatteMaterial(const TextureParams &mp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_MATERIALS_MATTE_H

@@ -35,36 +35,47 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_INTEGRATORS_SPPM_H
+#define PBRT_INTEGRATORS_SPPM_H
 
-// integrators/whitted.h*
+// integrators/sppm.h*
 #include "pbrt.h"
 #include "integrator.h"
-#include "scene.h"
+#include "camera.h"
+#include "film.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// SPPM Declarations
+class SPPMIntegrator : public Integrator {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // SPPMIntegrator Public Methods
+    SPPMIntegrator(std::shared_ptr<const Camera> &camera, int nIterations,
+                   int photonsPerIteration, int maxDepth,
+                   Float initialSearchRadius, int writeFrequency)
+        : camera(camera),
+          initialSearchRadius(initialSearchRadius),
+          nIterations(nIterations),
+          maxDepth(maxDepth),
+          photonsPerIteration(photonsPerIteration > 0
+                                  ? photonsPerIteration
+                                  : camera->film->croppedPixelBounds.Area()),
+          writeFrequency(writeFrequency) {}
+    void Render(const Scene &scene);
 
   private:
-    // WhittedIntegrator Private Data
+    // SPPMIntegrator Private Data
+    std::shared_ptr<const Camera> camera;
+    const Float initialSearchRadius;
+    const int nIterations;
     const int maxDepth;
+    const int photonsPerIteration;
+    const int writeFrequency;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+Integrator *CreateSPPMIntegrator(const ParamSet &params,
+                                 std::shared_ptr<const Camera> camera);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_INTEGRATORS_SPPM_H

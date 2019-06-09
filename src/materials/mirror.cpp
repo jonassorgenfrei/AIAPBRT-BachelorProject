@@ -30,41 +30,37 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
-
-// integrators/whitted.h*
-#include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+// materials/mirror.cpp*
+#include "materials/mirror.h"
+#include "spectrum.h"
+#include "reflection.h"
+#include "paramset.h"
+#include "texture.h"
+#include "interaction.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
-  public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+// MirrorMaterial Method Definitions
+void MirrorMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
+                                                MemoryArena &arena,
+                                                TransportMode mode,
+                                                bool allowMultipleLobes) const {
+    // Perform bump mapping with _bumpMap_, if present
+    if (bumpMap) Bump(bumpMap, si);
+    si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
+    Spectrum R = Kr->Evaluate(*si).Clamp();
+    if (!R.IsBlack())
+        si->bsdf->Add(ARENA_ALLOC(arena, SpecularReflection)(
+            R, ARENA_ALLOC(arena, FresnelNoOp)()));
+}
 
-  private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
-};
-
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+MirrorMaterial *CreateMirrorMaterial(const TextureParams &mp) {
+    std::shared_ptr<Texture<Spectrum>> Kr =
+        mp.GetSpectrumTexture("Kr", Spectrum(0.9f));
+    std::shared_ptr<Texture<Float>> bumpMap =
+        mp.GetFloatTextureOrNull("bumpmap");
+    return new MirrorMaterial(Kr, bumpMap);
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_INTEGRATORS_WHITTED_H

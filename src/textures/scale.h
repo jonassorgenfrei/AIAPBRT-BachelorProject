@@ -35,36 +35,39 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_WHITTED_H
-#define PBRT_INTEGRATORS_WHITTED_H
+#ifndef PBRT_TEXTURES_SCALE_H
+#define PBRT_TEXTURES_SCALE_H
 
-// integrators/whitted.h*
+// textures/scale.h*
 #include "pbrt.h"
-#include "integrator.h"
-#include "scene.h"
+#include "texture.h"
+#include "paramset.h"
 
 namespace pbrt {
 
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SamplerIntegrator {
+// ScaleTexture Declarations
+template <typename T1, typename T2>
+class ScaleTexture : public Texture<T2> {
   public:
-    // WhittedIntegrator Public Methods
-    WhittedIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler,
-                      const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    // ScaleTexture Public Methods
+    ScaleTexture(const std::shared_ptr<Texture<T1>> &tex1,
+                 const std::shared_ptr<Texture<T2>> &tex2)
+        : tex1(tex1), tex2(tex2) {}
+    T2 Evaluate(const SurfaceInteraction &si) const {
+        return tex1->Evaluate(si) * tex2->Evaluate(si);
+    }
 
   private:
-    // WhittedIntegrator Private Data
-    const int maxDepth;
+    // ScaleTexture Private Data
+    std::shared_ptr<Texture<T1>> tex1;
+    std::shared_ptr<Texture<T2>> tex2;
 };
 
-WhittedIntegrator *CreateWhittedIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+ScaleTexture<Float, Float> *CreateScaleFloatTexture(const Transform &tex2world,
+                                                    const TextureParams &tp);
+ScaleTexture<Spectrum, Spectrum> *CreateScaleSpectrumTexture(
+    const Transform &tex2world, const TextureParams &tp);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_WHITTED_H
+#endif  // PBRT_TEXTURES_SCALE_H
