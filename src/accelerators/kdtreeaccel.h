@@ -85,19 +85,21 @@ namespace pbrt {
 		/// Finalizes an instance of the <see cref="KdTreeAccel"/> class.
 		/// </summary>
 		~KdTreeAccel();
+
 		/// <summary>
 		/// Intersects the specified ray.
 		/// </summary>
 		/// <param name="ray">The ray.</param>
-		/// <param name="isect">The isect.</param>
-		/// <returns></returns>
+		/// <param name="isect">The SurfaceInteraction of the closest hit.</param>
+		/// <returns><c>true</c> if intersectino was found, otherwise <c>false</c></returns>
 		bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 
 		/// <summary>
-		/// Intersects the p.
+		/// Checks if the ray intersects any primitive in the tree.
+		/// Returns true as soon as it finds any intersection without worrying about finding the closest one.
 		/// </summary>
-		/// <param name="ray">The ray.</param>
-		/// <returns></returns>
+		/// <param name="ray">The ray to intersect.</param>
+		/// <returns><c>true</c> if any intersectino was found, otherwise <c>false</c></returns>
 		bool IntersectP(const Ray& ray) const;
 
 	private:
@@ -139,6 +141,7 @@ namespace pbrt {
 		/// Stores they the indices of more primitives overlapping in a segment.
 		/// </summary>
 		std::vector<int> primitiveIndices;
+
 		/// <summary>
 		/// The nodes
 		/// </summary>
@@ -160,6 +163,10 @@ namespace pbrt {
 		Bounds3f bounds;
 	};
 
+	/// <summary>
+	/// Structure for tree traversal.
+	/// Record nodes yet to be processed.
+	/// </summary>
 	struct KdToDo {
 		const KdAccelNode* node;
 		Float tMin, tMax;

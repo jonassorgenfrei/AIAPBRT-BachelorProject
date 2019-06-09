@@ -160,8 +160,9 @@ namespace pbrt {
 		std::unique_ptr<BoundEdge[]> edges[3];
 		for (int i = 0; i < 3; ++i)
 			edges[i].reset(new BoundEdge[2 * primitives.size()]);	// for the Bounding box projection on the axes, reuse this on each iteration
+		// reserve memory of integers for the prims0 & prims1 for storing worst-case possible number of overlapping primitive numbers
 		std::unique_ptr<int[]> prims0(new int[primitives.size()]);
-		std::unique_ptr<int[]> prims1(new int[(maxDepth + 1) * primitives.size()]);
+		std::unique_ptr<int[]> prims1(new int[(maxDepth + 1) * primitives.size()]);	// more memory for prims1, cause prims 0 only stores prims for a single level at a time
 
 		// Initialize _primNums_ for kd-tree construction
 		std::unique_ptr<int[]> primNums(new int[primitives.size()]);
@@ -301,19 +302,20 @@ namespace pbrt {
 			axis = (axis + 1) % 3;
 			goto retrySplit;
 		}
-		if (bestCost > oldCost) ++badRefines;
-		if ((bestCost > 4 * oldCost && nPrimitives < 16) || bestAxis == -1 ||
-			badRefines == 3) {
-			nodes[nodeNum].InitLeaf(primNums, nPrimitives, &primitiveIndices);
+		if (bestCost > oldCost) ++badRefines;	// allowing a few slightly poor refinements
+		if ((bestCost > 4 * oldCost && nPrimitives < 16)	|| // check if split cost is higher than not splitting the node && number of primitives is not too high
+										bestAxis == -1		||
+										badRefines == 3) {
+			nodes[nodeNum].InitLeaf(primNums, nPrimitives, &primitiveIndices);	// make leaf node
 			return;
 		}
 
-		// Classify primitives with respect to split
+		// Classify primitives with respect to split being above or below or on both sides
 		int n0 = 0, n1 = 0;
-		for (int i = 0; i < bestOffset; ++i)
+		for (int i = 0; i < bestOffset; ++i)		
 			if (edges[bestAxis][i].type == EdgeType::Start)
 				prims0[n0++] = edges[bestAxis][i].primNum;
-		for (int i = bestOffset + 1; i < 2 * nPrimitives; ++i)
+		for (int i = bestOffset + 1; i < 2 * nPrimitives; ++i)		// skip bestOffset entry
 			if (edges[bestAxis][i].type == EdgeType::End)
 				prims1[n1++] = edges[bestAxis][i].primNum;
 
@@ -323,7 +325,7 @@ namespace pbrt {
 		bounds0.pMax[bestAxis] = bounds1.pMin[bestAxis] = tSplit;
 		buildTree(nodeNum + 1, bounds0, allPrimBounds, prims0, n0, depth - 1, edges,
 			prims0, prims1 + nPrimitives, badRefines);
-		int aboveChild = nextFreeNode;
+		int aboveChild = nextFreeNode;	// used for the above child
 		nodes[nodeNum].InitInterior(bestAxis, aboveChild, tSplit);
 		buildTree(aboveChild, bounds1, allPrimBounds, prims1, n1, depth - 1, edges,
 			prims0, prims1 + nPrimitives, badRefines);
@@ -332,35 +334,37 @@ namespace pbrt {
 	bool KdTreeAccel::Intersect(const Ray & ray, SurfaceInteraction * isect) const {
 		ProfilePhase p(Prof::AccelIntersect);
 		// Compute initial parametric range of ray inside kd-tree extent
-		Float tMin, tMax;
+		Float tMin, tMax;	// overall parametric range  of the ray's overlap with the tree
 		if (!bounds.IntersectP(ray, &tMin, &tMax)) {
-			return false;
+			return false;		// return false if the ray misses the overall bounding box
 		}
 
 		// Prepare to traverse kd-tree for ray
-		Vector3f invDir(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);
-		PBRT_CONSTEXPR int maxTodo = 64;
-		KdToDo todo[maxTodo];
+		Vector3f invDir(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);	// precompute to avoid an division each iteration step
+		PBRT_CONSTEXPR int maxTodo = 64;	// max number = max depth in the kd-tree
+		KdToDo todo[maxTodo];	// ordered so that the last active entry in the array is the next node that should be considered
 		int todoPos = 0;
 
-		// Traverse kd-tree nodes in order for ray
+		// Traverse kd-tree nodes in order (depth-first front-to-back traversal) for ray
 		bool hit = false;
 		const KdAccelNode * node = &nodes[0];
 		while (node != nullptr) {
 			// Bail out if we found a hit closer than the current node
-			if (ray.tMax < tMin) break;
-			if (!node->IsLeaf()) {
+			if (ray.tMax < tMin) break;	// only break where tMin is beyond the intersection, than it's certain that there is no closer intersection with some other primitive
+			if (!node->IsLeaf()) {	
 				// Process kd-tree interior node
 
 				// Compute parametric distance along ray to split plane
 				int axis = node->SplitAxis();
-				Float tPlane = (node->SplitPos() - ray.o[axis]) * invDir[axis];
+				Float tPlane = (node->SplitPos() - ray.o[axis]) * invDir[axis]; // intersect ray with node's splitting plane
+				// this helps to determine the order of nodes to check
 
-				// Get node children pointers for ray
-				const KdAccelNode * firstChild, *secondChild;
+				// Get node children pointers for ray by determining the order in which the ray encounters the children nodes
+				const KdAccelNode * firstChild,		// near node
+								*secondChild;		// far node
 				int belowFirst =
 					(ray.o[axis] < node->SplitPos()) ||
-					(ray.o[axis] == node->SplitPos() && ray.d[axis] <= 0);
+					(ray.o[axis] == node->SplitPos() && ray.d[axis] <= 0);	// handling the case that the origin lies on the splitting plane; then the direction is used to discriminate
 				if (belowFirst) {
 					firstChild = node + 1;
 					secondChild = &nodes[node->AboveChild()];
@@ -371,17 +375,17 @@ namespace pbrt {
 				}
 
 				// Advance to next child node, possibly enqueue other child
-				if (tPlane > tMax || tPlane <= 0)
-					node = firstChild;
-				else if (tPlane < tMin)
-					node = secondChild;
+				if (tPlane > tMax || tPlane <= 0)	// only near node needs to be processed
+					node = firstChild;				// becaus the ray doesnt overlap the far node due to its direction facing away from it or tsplit > tmax
+				else if (tPlane < tMin)				// only far node needs to be processed 
+					node = secondChild;				// since ray doesnt overlapp the near node
 				else {
 					// Enqueue _secondChild_ in todo list
-					todo[todoPos].node = secondChild;
+					todo[todoPos].node = secondChild;	// add far node to the todo stack
 					todo[todoPos].tMin = tPlane;
 					todo[todoPos].tMax = tMax;
 					++todoPos;
-					node = firstChild;
+					node = firstChild;					// process near node next
 					tMax = tPlane;
 				}
 			}
@@ -392,7 +396,7 @@ namespace pbrt {
 					const std::shared_ptr<Primitive>& p =
 						primitives[node->onePrimitive];
 					// Check one primitive inside leaf node
-					if (p->Intersect(ray, isect)) hit = true;
+					if (p->Intersect(ray, isect)) hit = true;	// passing intersection request on the primitive
 				}
 				else {
 					for (int i = 0; i < nPrimitives; ++i) {
@@ -408,11 +412,12 @@ namespace pbrt {
 				if (todoPos > 0) {
 					--todoPos;
 					node = todo[todoPos].node;
-					tMin = todo[todoPos].tMin;
+					// always hold the parametric range for the ray's overlap wiith the current node
+					tMin = todo[todoPos].tMin;	
 					tMax = todo[todoPos].tMax;
 				}
 				else
-					break;
+					break;	// end if todo array is empty
 			}
 		}
 		return hit;
