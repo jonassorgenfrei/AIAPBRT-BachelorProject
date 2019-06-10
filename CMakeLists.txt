@@ -527,21 +527,21 @@ TARGET_COMPILE_FEATURES ( pbrt_exe PRIVATE ${PBRT_CXX11_FEATURES} )
 TARGET_LINK_LIBRARIES ( pbrt_exe ${ALL_PBRT_LIBS} )
 
 # Tools
-#ADD_EXECUTABLE ( bsdftest src/tools/bsdftest.cpp )
-#ADD_SANITIZERS ( bsdftest )
-#TARGET_COMPILE_FEATURES ( bsdftest PRIVATE ${PBRT_CXX11_FEATURES} )
-#TARGET_LINK_LIBRARIES ( bsdftest ${ALL_PBRT_LIBS} )
+ADD_EXECUTABLE ( bsdftest src/tools/bsdftest.cpp )
+ADD_SANITIZERS ( bsdftest )
+TARGET_COMPILE_FEATURES ( bsdftest PRIVATE ${PBRT_CXX11_FEATURES} )
+TARGET_LINK_LIBRARIES ( bsdftest ${ALL_PBRT_LIBS} )
 
-#ADD_EXECUTABLE ( imgtool src/tools/imgtool.cpp )
-#ADD_SANITIZERS ( imgtool )
-#TARGET_COMPILE_FEATURES ( imgtool PRIVATE ${PBRT_CXX11_FEATURES} )
-#TARGET_LINK_LIBRARIES ( imgtool ${ALL_PBRT_LIBS} )
+ADD_EXECUTABLE ( imgtool src/tools/imgtool.cpp )
+ADD_SANITIZERS ( imgtool )
+TARGET_COMPILE_FEATURES ( imgtool PRIVATE ${PBRT_CXX11_FEATURES} )
+TARGET_LINK_LIBRARIES ( imgtool ${ALL_PBRT_LIBS} )
 
-#ADD_EXECUTABLE ( obj2pbrt src/tools/obj2pbrt.cpp )
-#ADD_SANITIZERS ( obj2pbrt )
+ADD_EXECUTABLE ( obj2pbrt src/tools/obj2pbrt.cpp )
+ADD_SANITIZERS ( obj2pbrt )
 
-#ADD_EXECUTABLE ( cyhair2pbrt src/tools/cyhair2pbrt.cpp )
-#ADD_SANITIZERS ( cyhair2pbrt )
+ADD_EXECUTABLE ( cyhair2pbrt src/tools/cyhair2pbrt.cpp )
+ADD_SANITIZERS ( cyhair2pbrt )
 
 # Unit test
 
@@ -561,10 +561,10 @@ ADD_TEST ( pbrt_unit_test pbrt_test )
 
 INSTALL ( TARGETS
   pbrt_exe
-#  bsdftest
-#  imgtool
-#  obj2pbrt
-#  cyhair2pbrt
+  bsdftest
+  imgtool
+  obj2pbrt
+  cyhair2pbrt
   DESTINATION
   bin
   )

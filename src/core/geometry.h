@@ -275,7 +275,7 @@ namespace pbrt {
 
 	template <typename T>
 	inline std::ostream& operator<<(std::ostream& os, const Vector3<T> &v) {
-		os << "[" << v.x << ", " << v.y << ", " << v.z << "]";
+		os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
 		return os;
 	}
 

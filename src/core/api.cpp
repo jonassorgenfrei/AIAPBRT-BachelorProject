@@ -43,8 +43,7 @@
 // API Additional Headers
 #include "accelerators/bvh.h"
 #include "accelerators/kdtreeaccel.h"
-#include "camera.h" // to delete
-/*TODO: #include "cameras/environment.h"
+#include "cameras/environment.h"
 #include "cameras/orthographic.h"
 #include "cameras/perspective.h"
 #include "cameras/realistic.h"
@@ -61,7 +60,7 @@
 #include "integrators/sppm.h"
 #include "integrators/volpath.h"*/
 #include "integrators/whitted.h"
-/*TODO: #include "lights/diffuse.h"
+#include "lights/diffuse.h"
 #include "lights/distant.h"
 #include "lights/goniometric.h"
 #include "lights/infinite.h"
@@ -87,7 +86,7 @@
 #include "samplers/random.h"
 #include "samplers/sobol.h"
 #include "samplers/stratified.h"
-#include "samplers/zerotwosequence.h"*/
+#include "samplers/zerotwosequence.h"
 #include "shapes/cone.h"
 #include "shapes/curve.h"
 #include "shapes/cylinder.h"
@@ -100,10 +99,10 @@
 #include "shapes/sphere.h"
 #include "shapes/triangle.h"
 #include "shapes/plymesh.h"
-/*TODO: #include "textures/bilerp.h"
-#include "textures/checkerboard.h" */
+#include "textures/bilerp.h"
+#include "textures/checkerboard.h" 
 #include "textures/constant.h"
-/*TODO: #include "textures/dots.h"
+#include "textures/dots.h"
 #include "textures/fbm.h"
 #include "textures/imagemap.h"
 #include "textures/marble.h"
@@ -114,7 +113,7 @@
 #include "textures/windy.h"
 #include "textures/wrinkled.h"
 #include "media/grid.h"
-#include "media/homogeneous.h"*/
+#include "media/homogeneous.h"
 
 #include <map>
 #include <stdio.h>
@@ -207,8 +206,8 @@ namespace pbrt {
 			namedMaterials(std::make_shared<NamedMaterialMap>()) {
 			ParamSet empty;
 			TextureParams tp(empty, empty, *floatTextures, *spectrumTextures);
-			/* TODO: std::shared_ptr<Material> mtl(CreateMatteMaterial(tp));
-			currentMaterial = std::make_shared<MaterialInstance>("matte", mtl, ParamSet()); */
+			std::shared_ptr<Material> mtl(CreateMatteMaterial(tp));
+			currentMaterial = std::make_shared<MaterialInstance>("matte", mtl, ParamSet()); 
 		}
 		std::shared_ptr<Material> GetMaterialForShape(const ParamSet& geomParams);
 		MediumInterface CreateMediumInterface();
@@ -545,7 +544,6 @@ namespace pbrt {
 	std::shared_ptr<Material> MakeMaterial(const std::string& name,
 		const TextureParams& mp) {
 		Material* material = nullptr;
-		/* TODO:
 		if (name == "" || name == "none")
 			return nullptr;
 		else if (name == "matte")
@@ -615,7 +613,7 @@ namespace pbrt {
 		mp.ReportUnused();
 		if (!material) Error("Unable to create material \"%s\"", name.c_str());
 		else ++nMaterialsCreated;
-		*/
+		
 		return std::shared_ptr<Material>(material);
 	}
 
@@ -623,7 +621,6 @@ namespace pbrt {
 		const Transform& tex2world,
 		const TextureParams& tp) {
 		Texture<Float>* tex = nullptr;
-		/* TODO:
 		if (name == "constant")
 			tex = CreateConstantFloatTexture(tex2world, tp);
 		else if (name == "scale")
@@ -653,7 +650,7 @@ namespace pbrt {
 		else
 			Warning("Float texture \"%s\" unknown.", name.c_str());
 		tp.ReportUnused();
-		*/
+		
 		return std::shared_ptr<Texture<Float>>(tex);
 	}
 
@@ -661,7 +658,7 @@ namespace pbrt {
 		const std::string& name, const Transform& tex2world,
 		const TextureParams& tp) {
 		Texture<Spectrum>* tex = nullptr;
-		/* TODO:
+		
 		if (name == "constant")
 			tex = CreateConstantSpectrumTexture(tex2world, tp);
 		else if (name == "scale")
@@ -691,7 +688,7 @@ namespace pbrt {
 		else
 			Warning("Spectrum texture \"%s\" unknown.", name.c_str());
 		tp.ReportUnused();
-		*/
+		
 		return std::shared_ptr<Texture<Spectrum>>(tex);
 	}
 
@@ -712,7 +709,7 @@ namespace pbrt {
 		sig_a = paramSet.FindOneSpectrum("sigma_a", sig_a) * scale;
 		sig_s = paramSet.FindOneSpectrum("sigma_s", sig_s) * scale;
 		Medium* m = NULL;
-		/* TODO:
+		
 		if (name == "homogeneous") {
 			m = new HomogeneousMedium(sig_a, sig_s, g);
 		}
@@ -743,7 +740,7 @@ namespace pbrt {
 		else
 			Warning("Medium \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		*/
+		
 		return std::shared_ptr<Medium>(m);
 	}
 
@@ -752,7 +749,7 @@ namespace pbrt {
 		const Transform& light2world,
 		const MediumInterface& mediumInterface) {
 		std::shared_ptr<Light> light;
-		/* TODO:
+		
 		if (name == "point")
 			light =
 			CreatePointLight(light2world, mediumInterface.outside, paramSet);
@@ -771,7 +768,7 @@ namespace pbrt {
 		else
 			Warning("Light \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		*/
+		
 		return light;
 	}
 
@@ -781,14 +778,14 @@ namespace pbrt {
 		const ParamSet& paramSet,
 		const std::shared_ptr<Shape>& shape) {
 		std::shared_ptr<AreaLight> area;
-		/* TODO: 
+		
 		if (name == "area" || name == "diffuse")
 			area = CreateDiffuseAreaLight(light2world, mediumInterface.outside,
 				paramSet, shape);
 		else
 			Warning("Area light \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		*/
+		
 		return area;
 	}
 
@@ -811,7 +808,7 @@ namespace pbrt {
 		const TransformSet& cam2worldSet, Float transformStart,
 		Float transformEnd, Film* film) {
 		Camera* camera = nullptr;
-		/* TODO: 
+		
 		MediumInterface mediumInterface = graphicsState.CreateMediumInterface();
 		static_assert(MaxTransforms == 2,
 			"TransformCache assumes only two transforms");
@@ -836,7 +833,7 @@ namespace pbrt {
 		else
 			Warning("Camera \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		*/
+		
 		return camera;
 	}
 
@@ -844,7 +841,7 @@ namespace pbrt {
 		const ParamSet& paramSet,
 		const Film* film) {
 		Sampler* sampler = nullptr;
-		/* TODO: 
+		
 		if (name == "lowdiscrepancy" || name == "02sequence")
 			sampler = CreateZeroTwoSequenceSampler(paramSet);
 		else if (name == "maxmindist")
@@ -860,14 +857,14 @@ namespace pbrt {
 		else
 			Warning("Sampler \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		*/
+		
 		return std::shared_ptr<Sampler>(sampler);
 	}
 
 	std::unique_ptr<Filter> MakeFilter(const std::string& name,
 		const ParamSet& paramSet) {
 		Filter* filter = nullptr;
-		/* TODO:
+		
 		if (name == "box")
 			filter = CreateBoxFilter(paramSet);
 		else if (name == "gaussian")
@@ -883,7 +880,7 @@ namespace pbrt {
 			exit(1);
 		}
 		paramSet.ReportUnused();
-		*/
+		
 		return std::unique_ptr<Filter>(filter);
 	}
 
@@ -1665,10 +1662,10 @@ namespace pbrt {
 		graphicsState = GraphicsState();
 		transformCache.Clear();
 		currentApiState = APIState::OptionsBlock;
-		/* TODO:
+		
 		ImageTexture<Float, Float>::ClearCache();
 		ImageTexture<RGBSpectrum, Spectrum>::ClearCache();
-		*/
+		
 		renderOptions.reset(new RenderOptions);
 
 		if (!PbrtOptions.cat && !PbrtOptions.toPly) {
@@ -1714,7 +1711,7 @@ namespace pbrt {
 		}
 
 		Integrator* integrator = nullptr;
-		/* TODO:
+		
 		if (IntegratorName == "whitted")
 			integrator = CreateWhittedIntegrator(IntegratorParams, sampler, camera);
 		else if (IntegratorName == "directlighting")
@@ -1740,7 +1737,7 @@ namespace pbrt {
 			Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
 			return nullptr;
 		}
-		*/
+		
 		if (renderOptions->haveScatteringMedia && IntegratorName != "volpath" &&
 			IntegratorName != "bdpt" && IntegratorName != "mlt") {
 			Warning(

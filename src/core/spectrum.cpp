@@ -1260,127 +1260,130 @@ const Float RGBIllum2SpectBlue[nRGB2SpectSamples] = {
 // others may involve downsampling. For upsampling, we just point-sample,
 // and for downsampling, we apply a box filter centered around the
 // destination wavelength with total width equal to the sample spacing.
-void ResampleLinearSpectrum(const Float *lambdaIn, const Float *vIn, int nIn,
-                            Float lambdaMin, Float lambdaMax, int nOut,
-                            Float *vOut) {
-    CHECK_GE(nOut, 2);
-    for (int i = 0; i < nIn - 1; ++i) CHECK_GT(lambdaIn[i + 1], lambdaIn[i]);
-    CHECK_LT(lambdaMin, lambdaMax);
+void ResampleLinearSpectrum(const Float* lambdaIn, const Float* vIn, int nIn,
+	Float lambdaMin, Float lambdaMax, int nOut,
+	Float* vOut) {
+	CHECK_GE(nOut, 2);
+	for (int i = 0; i < nIn - 1; ++i) CHECK_GT(lambdaIn[i + 1], lambdaIn[i]);
+	CHECK_LT(lambdaMin, lambdaMax);
 
-    // Spacing between samples in the output distribution.
-    Float delta = (lambdaMax - lambdaMin) / (nOut - 1);
+	// Spacing between samples in the output distribution.
+	Float delta = (lambdaMax - lambdaMin) / (nOut - 1);
 
-    // We assume that the SPD is constant outside of the specified
-    // wavelength range, taking on the respectively first/last SPD value
-    // for out-of-range wavelengths.
-    //
-    // To make this convention fit cleanly into the code below, we create
-    // virtual samples in the input distribution with index -1 for the
-    // sample before the first valid sample and index nIn for the sample
-    // after the last valid sample. In turn, can place those virtual
-    // samples beyond the endpoints of the target range so that we can
-    // always assume that the source range is broader than the target
-    // range, which in turn lets us not worry about various boundary cases
-    // below.
+	// We assume that the SPD is constant outside of the specified
+	// wavelength range, taking on the respectively first/last SPD value
+	// for out-of-range wavelengths.
+	//
+	// To make this convention fit cleanly into the code below, we create
+	// virtual samples in the input distribution with index -1 for the
+	// sample before the first valid sample and index nIn for the sample
+	// after the last valid sample. In turn, can place those virtual
+	// samples beyond the endpoints of the target range so that we can
+	// always assume that the source range is broader than the target
+	// range, which in turn lets us not worry about various boundary cases
+	// below.
 
-    // The wavelengths of the virtual samples at the endpoints are set so
-    // that they are one destination sample spacing beyond the destination
-    // endpoints.  (Note that this potentially means that if we swept along
-    // indices from -1 to nIn, we wouldn't always see a monotonically
-    // increasing set of wavelength values. However, this isn't a problem
-    // since we only access these virtual samples if the destination range
-    // is wider than the source range.)
-    auto lambdaInClamped = [&](int index) {
-        CHECK(index >= -1 && index <= nIn);
-        if (index == -1) {
-            CHECK_LT(lambdaMin - delta, lambdaIn[0]);
-            return lambdaMin - delta;
-        } else if (index == nIn) {
-            CHECK_GT(lambdaMax + delta, lambdaIn[nIn - 1]);
-            return lambdaMax + delta;
-        }
-        return lambdaIn[index];
-    };
+	// The wavelengths of the virtual samples at the endpoints are set so
+	// that they are one destination sample spacing beyond the destination
+	// endpoints.  (Note that this potentially means that if we swept along
+	// indices from -1 to nIn, we wouldn't always see a monotonically
+	// increasing set of wavelength values. However, this isn't a problem
+	// since we only access these virtual samples if the destination range
+	// is wider than the source range.)
+	auto lambdaInClamped = [&](int index) {
+		CHECK(index >= -1 && index <= nIn);
+		if (index == -1) {
+			CHECK_LT(lambdaMin - delta, lambdaIn[0]);
+			return lambdaMin - delta;
+		}
+		else if (index == nIn) {
+			CHECK_GT(lambdaMax + delta, lambdaIn[nIn - 1]);
+			return lambdaMax + delta;
+		}
+		return lambdaIn[index];
+	};
 
-    // Due to the piecewise-constant assumption, the SPD values outside the
-    // specified range are given by the valid endpoints.
-    auto vInClamped = [&](int index) {
-        CHECK(index >= -1 && index <= nIn);
-        return vIn[Clamp(index, 0, nIn - 1)];
-    };
+	// Due to the piecewise-constant assumption, the SPD values outside the
+	// specified range are given by the valid endpoints.
+	auto vInClamped = [&](int index) {
+		CHECK(index >= -1 && index <= nIn);
+		return vIn[Clamp(index, 0, nIn - 1)];
+	};
 
-    // Helper that upsamples ors downsample the given SPD at the given
-    // wavelength lambda.
-    auto resample = [&](Float lambda) -> Float {
-        // Handle the edge cases first so that we don't need to worry about
-        // them in the following.
-        //
-        // First, if the entire filtering range for the destination is
-        // outside of the range of valid samples, we can just return the
-        // endpoint value.
-        if (lambda + delta / 2 <= lambdaIn[0]) return vIn[0];
-        if (lambda - delta / 2 >= lambdaIn[nIn - 1]) return vIn[nIn - 1];
-        // Second, if there's only one sample, then the SPD has the same
-        // value everywhere, and we're done.
-        if (nIn == 1) return vIn[0];
+	// Helper that upsamples ors downsample the given SPD at the given
+	// wavelength lambda.
+	auto resample = [&](Float lambda) -> Float {
+		// Handle the edge cases first so that we don't need to worry about
+		// them in the following.
+		//
+		// First, if the entire filtering range for the destination is
+		// outside of the range of valid samples, we can just return the
+		// endpoint value.
+		if (lambda + delta / 2 <= lambdaIn[0]) return vIn[0];
+		if (lambda - delta / 2 >= lambdaIn[nIn - 1]) return vIn[nIn - 1];
+		// Second, if there's only one sample, then the SPD has the same
+		// value everywhere, and we're done.
+		if (nIn == 1) return vIn[0];
 
-        // Otherwise, find indices into the input SPD that bracket the
-        // wavelength range [lambda-delta, lambda+delta]. Note that this is
-        // a 2x wider range than we will actually filter over in the end.
-        int start, end;
-        if (lambda - delta < lambdaIn[0])
-            // Virtual sample at the start, as described above.
-            start = -1;
-        else {
-            start = FindInterval(
-                nIn, [&](int i) { return lambdaIn[i] <= lambda - delta; });
-            CHECK(start >= 0 && start < nIn);
-        }
+		// Otherwise, find indices into the input SPD that bracket the
+		// wavelength range [lambda-delta, lambda+delta]. Note that this is
+		// a 2x wider range than we will actually filter over in the end.
+		int start, end;
+		if (lambda - delta < lambdaIn[0])
+			// Virtual sample at the start, as described above.
+			start = -1;
+		else {
+			start = FindInterval(
+				nIn, [&](int i) { return lambdaIn[i] <= lambda - delta; });
+			CHECK(start >= 0 && start < nIn);
+		}
 
-        if (lambda + delta > lambdaIn[nIn - 1])
-            // Virtual sample at the end, as described above.
-            end = nIn;
-        else {
-            // Linear search from the starting point. (Presumably more
-            // efficient than a binary search from scratch, or doesn't
-            // matter either way.)
-            end = start;
-            while (end < nIn && lambda + delta > lambdaIn[end]) ++end;
-        }
+		if (lambda + delta > lambdaIn[nIn - 1])
+			// Virtual sample at the end, as described above.
+			end = nIn;
+		else {
+			// Linear search from the starting point. (Presumably more
+			// efficient than a binary search from scratch, or doesn't
+			// matter either way.)
+			end = start;
+			while (end < nIn && lambda + delta > lambdaIn[end]) ++end;
+		}
 
-        if (end - start == 2 && lambdaInClamped(start) <= lambda - delta &&
-            lambdaIn[start + 1] == lambda &&
-            lambdaInClamped(end) >= lambda + delta) {
-            // Downsampling: special case where the input and output
-            // wavelengths line up perfectly, so just return the
-            // corresponding point sample at lambda.
-            return vIn[start + 1];
-        } else if (end - start == 1) {
-            // Downsampling: evaluate the piecewise-linear function at
-            // lambda.
-            Float t = (lambda - lambdaInClamped(start)) /
-                      (lambdaInClamped(end) - lambdaInClamped(start));
-            CHECK(t >= 0 && t <= 1);
-            return Lerp(t, vInClamped(start), vInClamped(end));
-        } else {
-            // Upsampling: use a box filter and average all values in the
-            // input spectrum from lambda +/- delta / 2.
-            return AverageSpectrumSamples(
-                lambdaIn, vIn, nIn, lambda - delta / 2, lambda + delta / 2);
-        }
-    };
+		if (end - start == 2 && lambdaInClamped(start) <= lambda - delta &&
+			lambdaIn[start + 1] == lambda &&
+			lambdaInClamped(end) >= lambda + delta) {
+			// Downsampling: special case where the input and output
+			// wavelengths line up perfectly, so just return the
+			// corresponding point sample at lambda.
+			return vIn[start + 1];
+		}
+		else if (end - start == 1) {
+			// Downsampling: evaluate the piecewise-linear function at
+			// lambda.
+			Float t = (lambda - lambdaInClamped(start)) /
+				(lambdaInClamped(end) - lambdaInClamped(start));
+			CHECK(t >= 0 && t <= 1);
+			return Lerp(t, vInClamped(start), vInClamped(end));
+		}
+		else {
+			// Upsampling: use a box filter and average all values in the
+			// input spectrum from lambda +/- delta / 2.
+			return AverageSpectrumSamples(
+				lambdaIn, vIn, nIn, lambda - delta / 2, lambda + delta / 2);
+		}
+	};
 
-    // For each destination sample, compute the wavelength lambda for the
-    // sample and then resample the source SPD distribution at that point.
-    for (int outOffset = 0; outOffset < nOut; ++outOffset) {
-        // TODO: Currently, resample() does a binary search each time,
-        // even though we could do a single sweep across the input array,
-        // since we're resampling it at a regular and increasing set of
-        // lambdas. It would be nice to polish that up.
-        Float lambda =
-            Lerp(Float(outOffset) / (nOut - 1), lambdaMin, lambdaMax);
-        vOut[outOffset] = resample(lambda);
-    }
+	// For each destination sample, compute the wavelength lambda for the
+	// sample and then resample the source SPD distribution at that point.
+	for (int outOffset = 0; outOffset < nOut; ++outOffset) {
+		// TODO: Currently, resample() does a binary search each time,
+		// even though we could do a single sweep across the input array,
+		// since we're resampling it at a regular and increasing set of
+		// lambdas. It would be nice to polish that up.
+		Float lambda =
+			Lerp(Float(outOffset) / (nOut - 1), lambdaMin, lambdaMax);
+		vOut[outOffset] = resample(lambda);
+	}
 }
 
 }  // namespace pbrt

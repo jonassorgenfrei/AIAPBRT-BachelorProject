@@ -26,9 +26,9 @@
  // main/pbrt.cpp*
 
 #include "../core/pbrt.h"
-#include "api.h" // TODO:
+#include "api.h"
 #include "parser.h"
-#include "parallel.h" // TODO:s
+#include "parallel.h"
 #include <glog/logging.h>
 
 using namespace pbrt;
@@ -181,21 +181,19 @@ int main(int argc, char *argv[]) {
 		fflush(stdout);
 	}
 
-	//pbrtInit(options);
+	pbrtInit(options);
 
 	// Process scene description
 	if (filenames.empty()) {
-		// Parse Scene from standard input
-		//pbrtParseFile("-");
+		// Parse scene from standard input
+		pbrtParseFile("-");
 	}
 	else {
-		/* Parse scene from input files */
-		for (const std::string &f : filenames);
-			 //pbrtParseFile(f);
-			//if (!pbrtParseFile(f))
-			//	Error("Couldn't open scene file \"%s\"", f.c_str());
+		// Parse scene from input files
+		for (const std::string& f : filenames)
+			pbrtParseFile(f);
 	}
 
-	//pbrtCleanup();
+	pbrtCleanup();
 	return 0;
 }
