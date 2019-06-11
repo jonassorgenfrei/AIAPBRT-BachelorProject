@@ -526,6 +526,14 @@ SET_TARGET_PROPERTIES ( pbrt_exe PROPERTIES OUTPUT_NAME pbrt )
 TARGET_COMPILE_FEATURES ( pbrt_exe PRIVATE ${PBRT_CXX11_FEATURES} )
 TARGET_LINK_LIBRARIES ( pbrt_exe ${ALL_PBRT_LIBS} )
 
+# batch intersection output
+ADD_EXECUTABLE ( aiapbrt_intersection src/tools/intersectionoutput/isecoutput.cpp )
+ADD_SANITIZERS ( aiapbrt_intersection )
+
+SET_TARGET_PROPERTIES ( aiapbrt_intersection PROPERTIES OUTPUT_NAME aiapbrt_intersection )
+TARGET_COMPILE_FEATURES ( aiapbrt_intersection PRIVATE ${PBRT_CXX11_FEATURES} )
+TARGET_LINK_LIBRARIES ( aiapbrt_intersection ${ALL_PBRT_LIBS} )
+
 # Tools
 ADD_EXECUTABLE ( bsdftest src/tools/bsdftest.cpp )
 ADD_SANITIZERS ( bsdftest )
