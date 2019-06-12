@@ -44,7 +44,7 @@ Reformatting options:
 }
 
 /// <summary>
-/// Mains the specified argc.
+/// Main Entry Point
 /// </summary>
 /// <param name="argc">The argc.</param>
 /// <param name="argv">The argv.</param>
@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 
 	Options options;
 	std::vector<std::string> filenames;
+	filenames.push_back("../scenes/killeroo-simple.pbrt");
 
 	// Process command-line arguments
 	for (int i = 1; i < argc; ++i) {
@@ -140,6 +141,7 @@ int main(int argc, char *argv[]) {
 		}
 		else filenames.push_back(argv[i]);
 	}
+
 	// Print welcome banner
 	if (!options.quiet && !options.cat && !options.toPly) {
 		if (sizeof(void *) == 4)
@@ -158,6 +160,9 @@ int main(int argc, char *argv[]) {
 			"The source code to pbrt (but *not* the book contents) is covered "
 			"by the BSD License.\n");
 		printf("See the file LICENSE.txt for the conditions of the license.\n");
+		printf("--------------------------------------------------------------\n");
+		printf("-----------------Intersection Test Generator------------------\n");
+		printf("--------------------------------------------------------------\n");
 		fflush(stdout);
 	}
 
