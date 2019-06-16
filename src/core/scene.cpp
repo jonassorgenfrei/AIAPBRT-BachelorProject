@@ -27,7 +27,7 @@
  // core/scene.cpp*
 #include "scene.h"
 #include "stats.h"
-
+#include <fstream>      // std::ofstream
 namespace pbrt {
 
 	STAT_COUNTER("Intersections/Regular ray intersection tests",
@@ -38,13 +38,23 @@ namespace pbrt {
 	bool Scene::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
 		++nIntersectionTests;
 		DCHECK_NE(ray.d, Vector3f(0, 0, 0));
-		return aggregate->Intersect(ray, isect);
+	
+		std::ofstream ofs("test.csv", std::ofstream::app);
+		ofs << ray.o << "|" << ray.d << "|";
+		bool tempB = aggregate->Intersect(ray, isect);
+		ofs << tempB << std::endl;
+		ofs.close();
+
+		return tempB;
 	}
 
 	bool Scene::IntersectP(const Ray& ray) const {
 		++nShadowTests;
 		DCHECK_NE(ray.d, Vector3f(0, 0, 0));
-		return aggregate->IntersectP(ray);
+
+		bool temp = aggregate->IntersectP(ray);
+
+		return temp;
 	}
 
 	bool Scene::IntersectTr(Ray ray, Sampler& sampler, SurfaceInteraction* isect,

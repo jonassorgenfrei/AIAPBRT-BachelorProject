@@ -1,9 +1,7 @@
 /**
  * Module for output ray tracing intersection tests and results
  */
-
-
-// main/pbrt.cpp*
+ // main/pbrt.cpp*
 
 #include "../core/pbrt.h"
 #include "api.h"
@@ -35,7 +33,7 @@ Logging options:
   --v <verbosity>      Set VLOG verbosity.
 Reformatting options:
   --cat                Print a reformatted version of the input file(s) to
-                       standard output. Does not render an image.
+                       standard output. Does not render an image. 
   --toply              Print a reformatted version of the input file(s) to
                        standard output and convert all triangle meshes to
                        PLY files. Does not render an image.
@@ -57,7 +55,7 @@ int main(int argc, char *argv[]) {
 	Options options;
 	std::vector<std::string> filenames;
 	filenames.push_back("../scenes/killeroo-simple.pbrt");
-
+	options.nThreads = 1;
 	// Process command-line arguments
 	for (int i = 1; i < argc; ++i) {
 		if (!strcmp(argv[i], "--nthreads") || !strcmp(argv[i], "--nthreads")) {

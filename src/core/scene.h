@@ -46,6 +46,8 @@ namespace pbrt {
 		Scene(std::shared_ptr<Primitive> aggregate,
 			const std::vector<std::shared_ptr<Light>>& lights)
 			: lights(lights), aggregate(aggregate) {
+
+	
 			// Scene Constructor Implementation
 			worldBound = aggregate->WorldBound();
 			for (const auto& light : lights) {
@@ -54,6 +56,7 @@ namespace pbrt {
 					infiniteLights.push_back(light);
 			}
 		}
+
 		const Bounds3f& WorldBound() const { return worldBound; }
 		bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 		bool IntersectP(const Ray& ray) const;
@@ -70,6 +73,7 @@ namespace pbrt {
 		// Scene Private Data
 		std::shared_ptr<Primitive> aggregate;
 		Bounds3f worldBound;
+
 	};
 
 }  // namespace pbrt
