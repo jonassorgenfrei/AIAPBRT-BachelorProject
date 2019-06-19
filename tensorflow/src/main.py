@@ -79,6 +79,12 @@ print("Data: {}".format(inputFeature))
 # Define the Target / Label
 label = intersections_dataframe["hit"]
 
+###################################
+## Split Data
+###################################
+
+
+
 #############################
 # Create Model 
 #############################
