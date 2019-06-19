@@ -192,7 +192,7 @@ def train_model(learning_rate,
 
     # 1. Create input functions
     training_input_fn = lambda: input_fn(training_examples, training_targets["hit"], batch_size=batch_size)
-    predict_training_input_fn = lambda: input_fn(training_examples, training_examples["hit"], num_epochs=1, shuffle=False)
+    predict_training_input_fn = lambda: input_fn(training_examples, training_targets["hit"], num_epochs=1, shuffle=False)
     predict_validation_input_fn = lambda: input_fn(validation_examples, validation_targets["hit"], num_epochs=1, shuffle=False)
     
     # Train the model, but do so inside a loop so that we can periodically assess
