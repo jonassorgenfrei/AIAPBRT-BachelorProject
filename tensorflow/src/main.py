@@ -13,6 +13,7 @@ from tensorflow.python.data import Dataset
 #from IPython import display
 
 # Math utilities
+import math
 import pathlib
 from matplotlib import cm
 from matplotlib import gridspec
@@ -39,10 +40,9 @@ printDataSet = False                # Flag for printing inputDataset
 
 # Model
 PERIODS = 10
-LEARNING_RATE = 0.00001
-STEPS = 100
-BATCH_SIZE = 1
-
+LEARNING_RATE = 0.0003
+STEPS = 500
+BATCH_SIZE = 5
 
 ######################
 ## Functions
@@ -220,7 +220,7 @@ def train_model(learning_rate,
         training_root_mean_squared_error = math.sqrt(
             metrics.mean_squared_error(training_predictions, training_targets))
         validation_root_mean_squared_error = math.sqrt(
-            metrics.mean_squared_error(validation_predictions, valdation_targets))
+            metrics.mean_squared_error(validation_predictions, validation_targets))
         # Occasinally print the current loss.
         print(" period %02d : %0.2f" % (period, training_root_mean_squared_error))
         # Add the loss metrics from this period to our list.
@@ -303,6 +303,10 @@ print("#################################")
 ###################################
 ## Split Data
 ###################################
+
+intersections_dataframe = intersections_dataframe.head(500000)
+print(len(intersections_dataframe))
+
 amountTrainingData = int(len(intersections_dataframe)*trainingValidationPercentage)
 amountValidationData = len(intersections_dataframe) - amountTrainingData
 
@@ -328,10 +332,13 @@ if(describeSplittedData) :
 ################
 # Plot Features
 ################
+################
 #plot_features(validation_examples,
 #              validation_targets,
 #              training_examples,
 #              training_targets)
+
+sys.exit(1)
 
 ##################################
 # Create Model (linear Regressor)
@@ -349,32 +356,21 @@ linear_regressor = train_model(
 ##################################
 # Evaluate on Test Data
 ##################################
-#intersections_test_data = pd.read_csv("")   # TODO: Import Test Data set
+intersections_test_data = intersections_dataframe.tail(500000)
 
-#test_examples = preprocess_features(intersections_test_data)
-#test_targets = preprocess_targets(intersections_test_data)
+test_examples = preprocess_features(intersections_test_data)
+test_targets = preprocess_targets(intersections_test_data)
 
-#predict_test_input_fn = lambda: input_fn(
-#    test_examples,
-#    test_targets["hit"],
-#    num_epochs=1,
-#    shuffle=False)
+predict_test_input_fn = lambda: input_fn(
+    test_examples,
+    test_targets["hit"],
+    num_epochs=1,
+    shuffle=False)
 
-#test_predictions = linear_regressor.predict(input_fn=predict_test_input_fn)
-#test_predictions = np.array([item['predictions'][0] for item in test_predictions])
+test_predictions = linear_regressor.predict(input_fn=predict_test_input_fn)
+test_predictions = np.array([item['predictions'][0] for item in test_predictions])
 
-#root_mean_squared_error = math.sqrt(
-#    metrics.mean_squared_error(test_predictions, test_targets))
+root_mean_squared_error = math.sqrt(
+    metrics.mean_squared_error(test_predictions, test_targets))
 
-#print("Final RMSE (on test data): %0.2f" % root_mean_squared_error)
-
-
-# Use gradient descent as the optimizer for training the model.
-#my_optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.0000001)
-#my_optimizer = tf.contrib.estimator.clip_gradients_by_norm(my_optimizer, 5.0)
-
-# Configure the linear regression model with our feature columns and optimizer.
-# Set a learning rate of 0.0000001 for Gradient Descent.
-#linear_regressor = tf.estimator.LinearRegressor(feature_columns=feature_columns,
-#                                                optimizer=my_optimizer)
-
+print("Final RMSE (on test data): %0.2f" % root_mean_squared_error)
