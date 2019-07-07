@@ -30,7 +30,7 @@ import sys
 # GLOBALS
 #########
 
-showDistributionPlots = False       # Flag for showing input distributions
+showDistributionPlots = True       # Flag for showing input distributions
 randomizeData = True               # Flag for randomization of input data
 
 trainingValidationPercentage = 0.8  # [0,1] Percentage of trainingData from complete Dataset
@@ -338,7 +338,7 @@ if(describeSplittedData) :
 #              training_examples,
 #              training_targets)
 
-sys.exit(1)
+sys.exit(0)
 
 ##################################
 # Create Model (linear Regressor)
