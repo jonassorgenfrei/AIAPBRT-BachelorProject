@@ -1671,23 +1671,53 @@ namespace pbrt {
 		return po;
 	}
 
+	/// <summary>
+	/// Converts spherical coordinates (theata, phi) to a direction vector.
+	/// </summary>
+	/// <param name="sinTheta">The sin of the theta angle.</param>
+	/// <param name="cosTheta">The cos of the theta angle.</param>
+	/// <param name="phi">The phi angle.</param>
+	/// <returns>The corresponding direction vector.</returns>
 	inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi) {
-		return Vector3f(sinTheta * std::cos(phi), sinTheta * std::sin(phi),
-			cosTheta);
+		return Vector3f(sinTheta * std::cos(phi), 
+						sinTheta * std::sin(phi),
+						cosTheta);
 	}
 
+	/// <summary>
+	/// Converts basis vectors to the appropriate direction vector with resprect to the coordinate drame defined by them.
+	/// </summary>
+	/// <param name="sinTheta">The sin theta.</param>
+	/// <param name="cosTheta">The cos theta.</param>
+	/// <param name="phi">The phi.</param>
+	/// <param name="x">The x basis vector.</param>
+	/// <param name="y">The y basis vector.</param>
+	/// <param name="z">The z basis vector.</param>
+	/// <returns>The appropriate direction vector.</returns>
 	inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi,
 										const Vector3f &x, const Vector3f &y,
 										const Vector3f &z) {
-		return sinTheta * std::cos(phi) * x + sinTheta * std::sin(phi) * y +
-			cosTheta * z;
+		return	sinTheta * std::cos(phi) * x + 
+				sinTheta * std::sin(phi) * y +
+				cosTheta * z;
 	}
 
-	inline Float SphericalTheta(const Vector3f &v) {
-		return std::acos(Clamp(v.z, -1, 1));
+	/// <summary>
+	/// Converts a dierection to the spherical angle Theta.
+	/// Not the function assumes that the vector v has been normalized before being passed in.
+	/// </summary>
+	/// <param name="v">The direction vector.</param>
+	/// <returns></returns>
+	inline Float SphericalTheta(const Vector3f& v) {
+		return std::acos(Clamp(v.z, -1, 1));	// clamp purley avoids errors from std::acos if |v.z| is slightly greater than 1 due to floating point round-off error
 	}
 
-	inline Float SphericalPhi(const Vector3f &v) {
+	/// <summary>
+	/// Converts a dierection to the spherical angle Phi.
+	/// </summary>
+	/// <param name="v">The direction vector.</param>
+	/// <returns></returns>
+	inline Float SphericalPhi(const Vector3f& v) {
 		Float p = std::atan2(v.y, v.x);
 		return (p < 0) ? (p + 2 * Pi) : p;
 	}

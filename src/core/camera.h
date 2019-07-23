@@ -53,8 +53,22 @@ class Camera {
     Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
            Float shutterClose, Film *film, const Medium *medium);
     virtual ~Camera();
-    virtual Float GenerateRay(const CameraSample &sample, Ray *ray) const = 0;
-    virtual Float GenerateRayDifferential(const CameraSample &sample,
+	/// <summary>
+	/// Generates a world space ray corresponding to a sample position on the film plane.
+	/// </summary>
+	/// <param name="sample">The sample.</param>
+	/// <param name="ray">The ray.</param>
+	/// <returns></returns>
+	virtual Float GenerateRay(const CameraSample& sample, Ray* ray) const = 0;
+
+	/// <summary>
+	/// Geerate a world space ray corresponding to a sample position on the filme plane and 
+	/// computes information about the image area that the ray is sampling. (e.g. information for anti-aliasing computations)
+	/// </summary>
+	/// <param name="sample">The sample.</param>
+	/// <param name="rd">The rd.</param>
+	/// <returns></returns>
+	virtual Float GenerateRayDifferential(const CameraSample& sample,
                                           RayDifferential *rd) const;
     virtual Spectrum We(const Ray &ray, Point2f *pRaster2 = nullptr) const;
     virtual void Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const;

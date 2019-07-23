@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{fe39186e-b401-404e-9849-b06a234fa485}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>NeuralNetwork\train.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>Global|VisualStudio|venv (Python 3.7 (64-bit))</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="LinearClassifier\dataHandling.py" />
+    <Compile Include="LinearClassifier\dataPlotter.py" />
+    <Compile Include="LinearClassifier\model.py" />
+    <Compile Include="LinearClassifier\predict.py" />
+    <Compile Include="LinearClassifier\train.py" />
+    <Compile Include="LinearRegressor\dataHandling.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LinearRegressor\dataPlotter.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LinearRegressor\model.py" />
+    <Compile Include="LinearRegressor\predict.py" />
+    <Compile Include="LinearRegressor\train.py" />
+    <Compile Include="NeuralNetwork\dataHandling.py" />
+    <Compile Include="NeuralNetwork\dataPlotter.py" />
+    <Compile Include="NeuralNetwork\model.py" />
+    <Compile Include="NeuralNetwork\predict.py" />
+    <Compile Include="NeuralNetwork\train.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="LinearClassifier" />
+    <Folder Include="LinearRegressor" />
+    <Folder Include="NeuralNetwork" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|VisualStudio|venv (Python 3.7 (64-bit))" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
