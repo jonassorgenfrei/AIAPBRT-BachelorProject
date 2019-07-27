@@ -10,6 +10,3 @@
 [submodule "src/ext/zlib"]
 	path = src/ext/zlib
 	url = https://github.com/mitsuba-renderer/zlib.git
-[submodule "glog"]
-	path = glog
-	url = https://github.com/google/glog.git
