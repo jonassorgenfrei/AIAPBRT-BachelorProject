@@ -10,6 +10,3 @@
 [submodule "src/ext/--force"]
 	path = src/ext/--force
 	url = https://github.com/wdas/ptex.git
-[submodule "src/ext/ptex"]
-	path = src/ext/ptex
-	url = https://github.com/wdas/ptex.git
