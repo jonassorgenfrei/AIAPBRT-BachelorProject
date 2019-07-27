@@ -7,3 +7,6 @@
 [submodule "src/ext/zlib"]
 	path = src/ext/zlib
 	url = https://github.com/mitsuba-renderer/zlib.git
+[submodule "src/ext/--force"]
+	path = src/ext/--force
+	url = https://github.com/wdas/ptex.git
