@@ -28,11 +28,11 @@ AttributeEnd
 AttributeBegin
   Material "matte" "color Kd" [.5 .5 .8]
   Translate 0 0 -140
-Shape "trianglemesh" "point P" [ -1000 -1000 0 1000 -1000 0 1000 1000 0 -1000 1000 0 ]
-      "float uv" [ 0 0 5 0 5 5 0 5 ]
+Shape "trianglemesh" "point P" [ -1000 -1000 0    1000 -1000 0     1000 1000 0     -1000 1000 0 ]
+      "float uv" [ 0 0   5 0   5 5   0 5 ]
 	"integer indices" [ 0 1 2 2 3 0]
-Shape "trianglemesh" "point P" [ -400 -1000 -1000   -400 1000 -1000   -400 1000 1000 -400 -1000 1000 ]
-      "float uv" [ 0 0 5 0 5 5 0 5 ]
+Shape "trianglemesh" "point P" [ -400 -1000 -1000   -400 1000 -1000   -400 1000 1000      -400 -1000 1000 ]
+      "float uv" [ 0 0   5 0   5 5   0 5 ]
         "integer indices" [ 0 1 2 2 3 0]
 AttributeEnd
 

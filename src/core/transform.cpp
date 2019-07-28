@@ -236,7 +236,14 @@ namespace pbrt {
 
 	// Look-At Transformation
 	// ----------------------
-	Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
+	/// <summary>
+	/// Constructs a Look-at-Matrix .
+	/// </summary>
+	/// <param name="pos">The position coordinate.</param>
+	/// <param name="look">The look at point.</param>
+	/// <param name="up">Up vector.</param>
+	/// <returns></returns>
+	Transform LookAt(const Point3f& pos, const Point3f& look, const Vector3f& up) {
 		Matrix4x4 cameraToWorld;
 		// Initialize fourth column of viewing matrix
 		cameraToWorld.m[0][3] = pos.x;

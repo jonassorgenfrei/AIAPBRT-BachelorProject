@@ -986,6 +986,18 @@ namespace pbrt {
 				printf("%*sScale %.9g %.9g %.9g\n", catIndentCount, "", sx, sy, sz);
 	}
 
+	/// <summary>
+	/// PBRTs the look at.
+	/// </summary>
+	/// <param name="ex">The eye x coordinate.</param>
+	/// <param name="ey">The eye y coordinate.</param>
+	/// <param name="ez">The eye z coordinate.</param>
+	/// <param name="lx">The look at point x.</param>
+	/// <param name="ly">The look at point y.</param>
+	/// <param name="lz">The look at point z.</param>
+	/// <param name="ux">The up vector x.</param>
+	/// <param name="uy">The up vector y.</param>
+	/// <param name="uz">The up vector z.</param>
 	void pbrtLookAt(Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
 		Float ux, Float uy, Float uz) {
 		VERIFY_INITIALIZED("LookAt");
