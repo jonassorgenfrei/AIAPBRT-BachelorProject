@@ -1,0 +1,22 @@
+AUC on the validation set: 0.95
+Accuracy on the validation set: 0.73
+AUC on the test set: 0.95
+Accuracy on the test set: 0.75
+
+# Dataset
+trainingTestPercentage = 0.8        # [0,1] Percentage of Training Test of complete 
+randomizeTrainingData = True       # Flag for randomization of Training-Validation-Data
+trainingValidationPercentage = 0.8  # [0,1] Percentage of training/validationData from complete trainingSet
+createSyntAngles = True            # Flag for creating syntectic Angles of vectors
+useFeatureCrosses = False           # Flag for crossing features
+
+## TODO: FEATURE CROSSING!!
+
+# Model Parameter
+trainModel = True                  # Flag Train Model
+PERIODS = 10
+LEARNING_RATE = 0.002
+STEPS = 900
+BATCH_SIZE = 40
+
+AdamOptimizer
