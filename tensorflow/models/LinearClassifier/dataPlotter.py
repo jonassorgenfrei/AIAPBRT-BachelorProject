@@ -1,3 +1,6 @@
+# Matplotlib
+from matplotlib import pyplot as plt
+
 def plot_features(validation_examples,validation_targets,training_examples,training_targets) :
     plt.figure(figsize=(13, 8))
 

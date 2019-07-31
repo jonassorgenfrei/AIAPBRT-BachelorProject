@@ -49,7 +49,7 @@ exportModel = True
 trainingTestPercentage = 0.8        # [0,1] Percentage of Training Test of complete 
 randomizeTrainingData = True       # Flag for randomization of Training-Validation-Data
 trainingValidationPercentage = 0.8  # [0,1] Percentage of training/validationData from complete trainingSet
-createSyntAngles = False            # Flag for creating syntectic Angles of vectors
+createSyntAngles = True            # Flag for creating syntectic Angles of vectors
 useFeatureCrosses = False           # Flag for crossing features
 
 # Model Parameter
@@ -189,7 +189,7 @@ if __name__ == '__main__':
         optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, 5.0)
         dnn = tf.estimator.DNNClassifier(
             feature_columns=construct_feature_columns(training_examples),
-            model_dir='model/v003',
+            model_dir='model/v003_synth',
             hidden_units=hidden_units,        # defines the structure of the NN, provides a list of ints, where each int corresponds to a hidden layer and indicates the number of nodes in it
             optimizer=optimizer
         )

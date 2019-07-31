@@ -21,6 +21,7 @@ import math
 import time
 # classifivation, regression and clusterin algorithms
 from sklearn import metrics
+import datetime
 
 ########################
 ## Functions
@@ -100,7 +101,7 @@ def train_model(estimator,
     validation_log_losses = []
     
     ticMain = time.time()   # start timer
-    
+    print(datetime.datetime.now())
     for period in range (0, periods) :
         tic = time.time()   # start Timer
         # Train the model, starting from prior state.
@@ -133,7 +134,8 @@ def train_model(estimator,
     
     tocMain = time.time()   # end timer
     print('Average time in model.py: {}s'.format((tocMain - ticMain) / 10))
-        
+    print(datetime.datetime.now())
+    
     if(True) :
         # Output a graph of loss metrics over periods.
         plt.ylabel("LogLoss")

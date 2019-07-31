@@ -1,0 +1,5 @@
+=============== EVALUATE ===============
+AUC on the validation set: 0.95
+Accuracy on the validation set: 0.86
+AUC on the test set: 0.95
+Accuracy on the test set: 0.86

@@ -32,7 +32,7 @@ describeData = False                 # Flag for descripion of import data
 describeTrainingSets = False         # Flag for 
 showDistributionPlots = False       # Flag for showing input distributions
 
-describeSplittedData = False        # Flag Show Information about splitted sets
+describeSplittedData = True        # Flag Show Information about splitted sets
 printDataSet = False                # Flag for printing inputDataset
 plotFeatures = False
 
@@ -40,7 +40,7 @@ plotFeatures = False
 trainingTestPercentage = 0.8        # [0,1] Percentage of Training Test of complete 
 randomizeTrainingData = True       # Flag for randomization of Training-Validation-Data
 trainingValidationPercentage = 0.8  # [0,1] Percentage of training/validationData from complete trainingSet
-createSyntAngles = False            # Flag for creating syntectic Angles of vectors
+createSyntAngles = True            # Flag for creating syntectic Angles of vectors
 useFeatureCrosses = False           # Flag for crossing features
 
 # Model Parameter

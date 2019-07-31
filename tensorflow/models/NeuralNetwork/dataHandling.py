@@ -8,6 +8,7 @@ ___author___ = "Jonas Sorgenfrei"
 
 # panda (column-oriented data analysis API)
 import pandas as pd
+import numpy as np 
 
 ########################
 ## Functions
@@ -34,9 +35,10 @@ def preprocess_features(intersections_dataframe, createSyntAngles):
     preprocess_features = selected_features.copy()
     # Create a synthetic feature
     if(createSyntAngles) :
-        processed_features["angAlpha"] = dir.x / (sqrt(dir.x*dir.x+dir.y*dir.y+dir.z*dir.z))
-        processed_features["angleBeta"] = dir.y / (sqrt(dir.x*dir.x+dir.y*dir.y+dir.z*dir.z))
-        processed_features["angleGamma"] = dir.z / (sqrt(dir.x*dir.x+dir.y*dir.y+dir.z*dir.z))
+        preprocess_features["angleAlpha"] = np.arccos(preprocess_features["direction.x"])
+        preprocess_features["angleBeta"] = np.arccos(preprocess_features["direction.y"])
+        preprocess_features["angleGamma"] = np.arccos(preprocess_features["direction.z"])
+
     return preprocess_features
 
 def preprocess_targets(intersections_dataframe) :

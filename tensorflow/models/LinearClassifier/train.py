@@ -47,7 +47,7 @@ exportModel = True
 trainingTestPercentage = 0.8        # [0,1] Percentage of Training Test of complete 
 randomizeTrainingData = True       # Flag for randomization of Training-Validation-Data
 trainingValidationPercentage = 0.8  # [0,1] Percentage of training/validationData from complete trainingSet
-createSyntAngles = False            # Flag for creating syntectic Angles of vectors
+createSyntAngles = True            # Flag for creating syntectic Angles of vectors
 useFeatureCrosses = False           # Flag for crossing features
 
 ## TODO: FEATURE CROSSING!!
@@ -162,12 +162,14 @@ if __name__ == '__main__':
         print("#################################")
         print(training_examples.describe())
         print(training_targets.describe())
+        print("Data: {}".format(training_examples))
 
         print("#################################")
         print("Validation Set")
         print("#################################")
         print(validation_examples.describe())
         print(validation_targets.describe())
+        print("Data: {}".format(validation_examples))
 
     # plot features
     if(plotFeatures) :
@@ -180,13 +182,12 @@ if __name__ == '__main__':
     #############
     if(trainModel) :
         print("=============== TRAIN MODEL ===============")
-
         # Create a linear regressor object
         optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)      # TODO: TRY DIFFERENT OPTIMIZER
         optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, 5.0)
         linear_classifier = tf.estimator.LinearClassifier(
             feature_columns=construct_feature_columns(training_examples),
-            model_dir='model/v002',
+            model_dir='model/v002_synt',
             optimizer=optimizer
         )
 
@@ -201,7 +202,7 @@ if __name__ == '__main__':
             validation_targets=validation_targets)
 
         print("=============== MODEL TRAINING FINISHED. ===============")
-        
+
         if(evaluateModel) :
             print("=============== EVALUATE ===============")
             # Validation Data
