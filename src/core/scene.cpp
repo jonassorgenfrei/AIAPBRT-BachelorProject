@@ -39,11 +39,11 @@ namespace pbrt {
 		++nIntersectionTests;
 		DCHECK_NE(ray.d, Vector3f(0, 0, 0));
 	
-		std::ofstream ofs("test.csv", std::ofstream::app);
-		ofs << ray.o << "|" << ray.d << "|";
+		//std::ofstream ofs("test.csv", std::ofstream::app);
+		//ofs << ray.o << "|" << ray.d << "|";
 		bool tempB = aggregate->Intersect(ray, isect);
-		ofs << tempB << std::endl;
-		ofs.close();
+		//ofs << tempB << std::endl;
+		//ofs.close();
 
 		return tempB;
 	}
