@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{fe39186e-b401-404e-9849-b06a234fa485}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>NeuralNetwork\train.py</StartupFile>
+    <StartupFile>NeuralNetwork - Set2\train.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -33,6 +33,11 @@
     <Compile Include="LinearRegressor\model.py" />
     <Compile Include="LinearRegressor\predict.py" />
     <Compile Include="LinearRegressor\train.py" />
+    <Compile Include="NeuralNetwork - Set2\dataHandling.py" />
+    <Compile Include="NeuralNetwork - Set2\dataPlotter.py" />
+    <Compile Include="NeuralNetwork - Set2\model.py" />
+    <Compile Include="NeuralNetwork - Set2\predict.py" />
+    <Compile Include="NeuralNetwork - Set2\train.py" />
     <Compile Include="NeuralNetwork\dataHandling.py" />
     <Compile Include="NeuralNetwork\dataPlotter.py" />
     <Compile Include="NeuralNetwork\model.py" />
@@ -43,6 +48,7 @@
     <Folder Include="LinearClassifier" />
     <Folder Include="LinearRegressor" />
     <Folder Include="NeuralNetwork" />
+    <Folder Include="NeuralNetwork - Set2\" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|VisualStudio|venv (Python 3.7 (64-bit))" />

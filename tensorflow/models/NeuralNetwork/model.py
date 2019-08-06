@@ -9,7 +9,7 @@ __author__ = "Jonas Sorgenfrei"
 
 # Tensorflow
 import tensorflow as tf
-from tensorflow.python.data import Dataset
+from tf.data import Dataset
 
 # Matplotlib
 from matplotlib import pyplot as plt
