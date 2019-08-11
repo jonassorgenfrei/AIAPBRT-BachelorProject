@@ -1,6 +1,7 @@
 import sklearn
 from sklearn.metrics import confusion_matrix, precision_score
 from sklearn.model_selection import train_test_split
+from keras import optimizers
 from keras.layers import Dense,Dropout
 from keras.models import Sequential
 from keras.regularizers import l2
@@ -22,21 +23,26 @@ print(x_train.shape,y_train.shape,x_test.shape,y_test.shape)
 model = Sequential()
 
 #hid layer-1
-model.add(Dense(150, activation='relu', input_dim=10, kernel_regularizer=l2(0.01)))
+model.add(Dense(600, activation='relu', input_dim=10, kernel_regularizer=l2(0.01)))
 model.add(Dropout(0.3, noise_shape=None, seed=None))
 
 #hid layer-2
-model.add(Dense(125, activation='relu', kernel_regularizer=l2(0.01)))
+model.add(Dense(600, activation='relu', kernel_regularizer=l2(0.01)))
+model.add(Dropout(0.3, noise_shape=None, seed=None))
+
+#hid layer-3
+model.add(Dense(400, activation='elu', kernel_regularizer=l2(0.01)))
 model.add(Dropout(0.3, noise_shape=None, seed=None))
 
 # Output layer
 model.add(Dense(1,activation='sigmoid'))	# since the labels to predict are either 0 or 1
 
-model.compile(loss='binary_crossentropy',optimizer='adam', metrics=['accuracy'])	# using negative log los and adam
+opt = optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+model.compile(loss='binary_crossentropy',optimizer=opt, metrics=['accuracy'])	# using negative log los and adam
 print(model.summary())
 
 # Train the Model
-model_output = model.fit(x_train, y_train, epochs=100,batch_size=100, verbose=1, validation_data=(x_test, y_test),)
+model_output = model.fit(x_train, y_train, epochs=100,batch_size=50, verbose=1, validation_data=(x_test, y_test),)
 print('Training Accuracy : ' , np.mean(model_output.history["acc"]))
 print('Validation Accuracy : ', np.mean(model_output.history["val_acc"]))
 
@@ -80,4 +86,4 @@ plt.legend()
 
 plt.show()
 
-model.save("Classifier.h5")
+model.save("Classifier_002.h5")
