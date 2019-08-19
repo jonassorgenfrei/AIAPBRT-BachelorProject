@@ -1,0 +1,5 @@
+{
+	Sphere {	center:-8.51253 0.592608 -5.28855	radius:1.00116	}
+	Sphere {	center:9.7058 -0.978851 -2.79946	radius:1.27024	}
+	Sphere {	center:7.1514 -1.2855 8.68465	radius:1.31892	}
+}

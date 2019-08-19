@@ -1,0 +1,38 @@
+Train on 840000 samples, validate on 210000 samples
+2019-08-06 02:23:38.192439
+2019-08-06 02:23:45.954334: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
+Epoch 1/10
+            47s LogLoss: 0.63, val_LogLoss:  0.63
+Epoch 2/10
+            47s LogLoss: 0.62, val_LogLoss:  0.62
+Epoch 3/10
+            47s LogLoss: 0.62, val_LogLoss:  0.62
+Epoch 4/10
+            47s LogLoss: 0.62, val_LogLoss:  0.62
+Epoch 5/10
+            47s LogLoss: 0.61, val_LogLoss:  0.61
+Epoch 6/10
+            47s LogLoss: 0.61, val_LogLoss:  0.61
+Epoch 7/10
+            47s LogLoss: 0.61, val_LogLoss:  0.61
+Epoch 8/10
+            47s LogLoss: 0.61, val_LogLoss:  0.61
+Epoch 9/10
+            47s LogLoss: 0.61, val_LogLoss:  0.61
+Epoch 10/10
+            47s LogLoss: 0.61, val_LogLoss:  0.61
+Average time in model.py: 472.93805367946624s
+2019-08-06 03:42:27.835274
+=============== MODEL TRAINING FINISHED. ===============
+=============== EVALUATE ===============
+AUC on the validation set: 0.71
+Accuracy on the validation set: 0.67
+
+
+
+# Model Parameter
+trainModel = True                  # Flag Train Model
+PERIODS = 10
+LEARNING_RATE = 0.002
+STEPS = 900
+BATCH_SIZE = 60

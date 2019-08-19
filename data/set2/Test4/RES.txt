@@ -1,0 +1,7 @@
+Complete Set 3
+
+AUC on the validation set: 0.88
+Accuracy on the validation set: 0.96
+
+AUC on the test set: 0.88
+Accuracy on the test set: 0.96

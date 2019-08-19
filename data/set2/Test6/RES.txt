@@ -1,0 +1,125 @@
+"D:\Dokumente\Development\virutalenv\Python Tensorflow\venv\Scripts\python.exe" "D:/Desktop/NN/NeuralNetwork - Set2/train.py"
+1.13.1
+#################################
+Imported Data; Records: 1500000
+#################################
+            A.x       A.y       A.z  ...       d.z         l         v
+count 1500000.0 1500000.0 1500000.0  ... 1500000.0 1500000.0 1500000.0
+mean        0.3       0.4       1.7  ...      -0.0      14.3       0.1
+std         7.0       1.2       7.4  ...       0.7       5.6       0.2
+min        -9.6      -1.7      -9.8  ...      -1.0       0.8       0.0
+25%        -7.9      -0.7      -4.7  ...      -0.7       9.2       0.0
+50%         0.3       0.4       1.9  ...      -0.0      14.1       0.0
+75%         7.0       1.2       9.6  ...       0.7      19.2       0.0
+max        11.0       3.1      11.1  ...       1.0      25.5       1.0
+
+[8 rows x 11 columns]
+Data:          A.x  A.y  A.z  B.x  B.y  B.z  d.x  d.y  d.z    l  v
+0        3.7  0.5  2.0  8.2 -0.9  9.4  0.5 -0.2  0.8  8.8  0
+1        7.6 -0.1  9.0  6.4  2.0 10.2 -0.4  0.8  0.5  2.7  0
+2        0.5  1.2 -9.7  7.2 -0.1  9.3  0.3 -0.1  0.9 20.2  0
+3       -8.4  2.7 -8.2  7.7 -0.7  9.7  0.7 -0.1  0.7 24.3  0
+4        9.9 -0.1 -1.9  6.5  1.7 10.5 -0.3  0.1  1.0 13.0  0
+...      ...  ...  ...  ...  ...  ...  ...  ...  ...  ... ..
+1499995  6.5  1.5 10.7 10.5 -0.2 -2.3  0.3 -0.1 -0.9 13.7  0
+1499996  6.2  1.0 11.0 -7.6  0.9 -5.0 -0.7 -0.0 -0.8 21.1  0
+1499997 -8.3  0.1 -1.2 -0.2 -1.3  6.9  0.7 -0.1  0.7 11.5  0
+1499998 -7.9  2.9 -9.2  7.4 -0.6  9.8  0.6 -0.1  0.8 24.6  0
+1499999 10.3 -0.7 -1.7  0.2  1.1 -9.1 -0.8  0.1 -0.6 12.7  0
+
+[1500000 rows x 11 columns]
+#################################
+Splitted-Data:
+Training-Data Amount: 1200000
+  Training Amount: 960000
+  Validation Amount: 240000
+  Test Amount: 300000
+#################################
+#################################
+Training Set
+#################################
+           A.x      A.y      A.z      B.x  ...      d.x      d.y      d.z        l
+count 960000.0 960000.0 960000.0 960000.0  ... 960000.0 960000.0 960000.0 960000.0
+mean       0.3      0.4      1.7      0.3  ...     -0.0      0.0     -0.0     14.3
+std        7.0      1.2      7.4      7.0  ...      0.7      0.2      0.7      5.6
+min       -9.6     -1.7     -9.8     -9.6  ...     -1.0     -1.0     -1.0      0.8
+25%       -7.9     -0.7     -4.8     -7.9  ...     -0.7     -0.1     -0.7      9.2
+50%        0.3      0.4      1.9      0.2  ...     -0.0      0.0     -0.0     14.1
+75%        7.0      1.2      9.6      7.0  ...      0.7      0.1      0.7     19.2
+max       11.0      3.1     11.1     11.0  ...      1.0      1.0      1.0     25.4
+
+[8 rows x 10 columns]
+             v
+count 960000.0
+mean       0.1
+std        0.2
+min        0.0
+25%        0.0
+50%        0.0
+75%        0.0
+max        1.0
+#################################
+Validation Set
+#################################
+           A.x      A.y      A.z      B.x  ...      d.x      d.y      d.z        l
+count 240000.0 240000.0 240000.0 240000.0  ... 240000.0 240000.0 240000.0 240000.0
+mean       0.3      0.4      1.7      0.3  ...     -0.0     -0.0     -0.0     14.3
+std        7.0      1.2      7.4      7.0  ...      0.7      0.2      0.7      5.6
+min       -9.6     -1.7     -9.8     -9.6  ...     -1.0     -1.0     -1.0      0.8
+25%       -7.9     -0.7     -4.7     -7.9  ...     -0.7     -0.1     -0.7      9.2
+50%        0.3      0.4      1.9      0.3  ...     -0.0      0.0     -0.0     14.1
+75%        7.0      1.2      9.6      7.0  ...      0.7      0.1      0.7     19.2
+max       11.0      3.1     11.1     11.0  ...      1.0      1.0      1.0     25.5
+
+[8 rows x 10 columns]
+             v
+count 240000.0
+mean       0.1
+std        0.2
+min        0.0
+25%        0.0
+50%        0.0
+75%        0.0
+max        1.0
+=============== TRAIN MODEL ===============
+
+WARNING: The TensorFlow contrib module will not be included in TensorFlow 2.0.
+For more information, please see:
+  * https://github.com/tensorflow/community/blob/master/rfcs/20180907-contrib-sunset.md
+  * https://github.com/tensorflow/addons
+If you depend on functionality not listed there, please file an issue.
+
+Train on 960000 samples, validate on 240000 samples
+2019-08-08 05:10:41.864759
+2019-08-08 05:10:50.648143: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
+Epoch 1/10
+            60s LogLoss: 0.17, val_LogLoss:  0.18
+Epoch 2/10
+            58s LogLoss: 0.18, val_LogLoss:  0.18
+Epoch 3/10
+            57s LogLoss: 0.17, val_LogLoss:  0.17
+Epoch 4/10
+            57s LogLoss: 0.16, val_LogLoss:  0.16
+Epoch 5/10
+            57s LogLoss: 0.18, val_LogLoss:  0.18
+Epoch 6/10
+            57s LogLoss: 0.21, val_LogLoss:  0.21
+Epoch 7/10
+            56s LogLoss: 0.17, val_LogLoss:  0.17
+Epoch 8/10
+            57s LogLoss: 0.17, val_LogLoss:  0.18
+Epoch 9/10
+            57s LogLoss: 0.17, val_LogLoss:  0.17
+Epoch 10/10
+            56s LogLoss: 0.16, val_LogLoss:  0.17
+Average time in model.py: 576.6220086097717s
+2019-08-08 06:46:48.084846
+=============== MODEL TRAINING FINISHED. ===============
+=============== EVALUATE ===============
+AUC on the validation set: 0.85
+Accuracy on the validation set: 0.95
+AUC on the test set: 0.85
+Accuracy on the test set: 0.95
+=============== Export ===============
+
+Process finished with exit code 0
