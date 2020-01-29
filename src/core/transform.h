@@ -420,10 +420,10 @@ namespace pbrt {
 		Vector3<T> *pError) const {
 		T x = p.x, y = p.y, z = p.z;
 		// Compute transformed coordinates from point _pt_
-		T xp = m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z + m.m[0][3];
-		T yp = m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z + m.m[1][3];
-		T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
-		T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
+		T xp = (m.m[0][0] * x + m.m[0][1] * y) + (m.m[0][2] * z + m.m[0][3]);
+		T yp = (m.m[1][0] * x + m.m[1][1] * y) + (m.m[1][2] * z + m.m[1][3]);
+		T zp = (m.m[2][0] * x + m.m[2][1] * y) + (m.m[2][2] * z + m.m[2][3]);
+		T wp = (m.m[3][0] * x + m.m[3][1] * y) + (m.m[3][2] * z + m.m[3][3]);
 
 		// Compute absolute error for transformed point
 		// NOTE: buggy if the matrix is projective and the homogeneous w coordinateof the projected point is not one
@@ -446,10 +446,10 @@ namespace pbrt {
 		const Vector3<T> &ptError,	// point with error
 		Vector3<T> *absError) const {
 		T x = pt.x, y = pt.y, z = pt.z;
-		T xp = m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z + m.m[0][3];
-		T yp = m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z + m.m[1][3];
-		T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
-		T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
+		T xp = (m.m[0][0] * x + m.m[0][1] * y) + (m.m[0][2] * z + m.m[0][3]);
+		T yp = (m.m[1][0] * x + m.m[1][1] * y) + (m.m[1][2] * z + m.m[1][3]);
+		T zp = (m.m[2][0] * x + m.m[2][1] * y) + (m.m[2][2] * z + m.m[2][3]);
+		T wp = (m.m[3][0] * x + m.m[3][1] * y) + (m.m[3][2] * z + m.m[3][3]);
 		// (y3+1)(|m0,0|dx+|m0,1|dy+|m0,2|dz)+y3(|m0,0x|+|m0,1y|+|m0,2z|+|m0,3|)
 		absError->x =
 			(gamma(3) + (T)1) *

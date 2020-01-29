@@ -400,6 +400,9 @@ namespace pbrt {
 
 		// Override surface normal in _isect_ for triangle
 		isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp02, dp12)));	// initialize geometry normal as (normalized) the cross product of the edge vectors dp02 and dp12 (corresponds exactly to triangle's winding order)
+		if (reverseOrientation ^ transformSwapsHandedness)
+			isect->n = isect->shading.n = -isect->n;
+
 		if (mesh->n || mesh->s) {
 			// Initialize _Triangle_ shading geometry
 
@@ -472,14 +475,9 @@ namespace pbrt {
 			}
 			else
 				dndu = dndv = Normal3f(0, 0, 0);
+			if (reverseOrientation) ts = -ts;
 			isect->SetShadingGeometry(ss, ts, dndu, dndv, true);
 		}
-
-		// Ensure correct orientation of the geometric normal
-		if (mesh->n)		// flip orientation if the angle between the isect->n and the interpolated normal is greater than 90 degrees
-			isect->n = Faceforward(isect->n, isect->shading.n);
-		else if (reverseOrientation ^ transformSwapsHandedness)
-			isect->n = isect->shading.n = -isect->n;
 
 		*tHit = t;
 		++nHits;

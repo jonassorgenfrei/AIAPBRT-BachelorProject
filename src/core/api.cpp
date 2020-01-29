@@ -58,7 +58,7 @@
 #include "integrators/ao.h"
 #include "integrators/path.h"
 #include "integrators/sppm.h"
-#include "integrators/volpath.h"*/
+#include "integrators/volpath.h"
 #include "integrators/whitted.h"
 #include "lights/diffuse.h"
 #include "lights/distant.h"
@@ -100,7 +100,7 @@
 #include "shapes/triangle.h"
 #include "shapes/plymesh.h"
 #include "textures/bilerp.h"
-#include "textures/checkerboard.h" 
+#include "textures/checkerboard.h"
 #include "textures/constant.h"
 #include "textures/dots.h"
 #include "textures/fbm.h"
@@ -207,7 +207,7 @@ namespace pbrt {
 			ParamSet empty;
 			TextureParams tp(empty, empty, *floatTextures, *spectrumTextures);
 			std::shared_ptr<Material> mtl(CreateMatteMaterial(tp));
-			currentMaterial = std::make_shared<MaterialInstance>("matte", mtl, ParamSet()); 
+			currentMaterial = std::make_shared<MaterialInstance>("matte", mtl, ParamSet());
 		}
 		std::shared_ptr<Material> GetMaterialForShape(const ParamSet& geomParams);
 		MediumInterface CreateMediumInterface();
@@ -323,16 +323,14 @@ namespace pbrt {
 		if (++hashTableOccupancy == hashTable.size() / 2)
 			Grow();
 
-		int offset = Hash(*tNew) & (hashTable.size() - 1);
-		int step = 1;
-		while (true) {
+		int baseOffset = Hash(*tNew) & (hashTable.size() - 1);
+		for (int nProbes = 0;; ++nProbes) {
+			// Quadratic probing.
+			int offset = (baseOffset + nProbes / 2 + nProbes * nProbes / 2) & (hashTable.size() - 1);
 			if (hashTable[offset] == nullptr) {
 				hashTable[offset] = tNew;
 				return;
 			}
-			// Advance using quadratic probing.
-			offset = (offset + step * step) & (hashTable.size() - 1);
-			++step;
 		}
 	}
 
@@ -344,16 +342,14 @@ namespace pbrt {
 		for (Transform* tEntry : hashTable) {
 			if (!tEntry) continue;
 
-			int offset = Hash(*tEntry) & (newTable.size() - 1);
-			int step = 1;
-			while (true) {
+			int baseOffset = Hash(*tEntry) & (hashTable.size() - 1);
+			for (int nProbes = 0;; ++nProbes) {
+				// Quadratic probing.
+				int offset = (baseOffset + nProbes / 2 + nProbes * nProbes / 2) & (hashTable.size() - 1);
 				if (newTable[offset] == nullptr) {
 					newTable[offset] = tEntry;
 					break;
 				}
-				// Advance using quadratic probing.
-				offset = (offset + step * step) & (hashTable.size() - 1);
-				++step;
 			}
 		}
 
@@ -613,7 +609,6 @@ namespace pbrt {
 		mp.ReportUnused();
 		if (!material) Error("Unable to create material \"%s\"", name.c_str());
 		else ++nMaterialsCreated;
-		
 		return std::shared_ptr<Material>(material);
 	}
 
@@ -650,7 +645,6 @@ namespace pbrt {
 		else
 			Warning("Float texture \"%s\" unknown.", name.c_str());
 		tp.ReportUnused();
-		
 		return std::shared_ptr<Texture<Float>>(tex);
 	}
 
@@ -658,7 +652,6 @@ namespace pbrt {
 		const std::string& name, const Transform& tex2world,
 		const TextureParams& tp) {
 		Texture<Spectrum>* tex = nullptr;
-		
 		if (name == "constant")
 			tex = CreateConstantSpectrumTexture(tex2world, tp);
 		else if (name == "scale")
@@ -688,7 +681,6 @@ namespace pbrt {
 		else
 			Warning("Spectrum texture \"%s\" unknown.", name.c_str());
 		tp.ReportUnused();
-		
 		return std::shared_ptr<Texture<Spectrum>>(tex);
 	}
 
@@ -709,7 +701,6 @@ namespace pbrt {
 		sig_a = paramSet.FindOneSpectrum("sigma_a", sig_a) * scale;
 		sig_s = paramSet.FindOneSpectrum("sigma_s", sig_s) * scale;
 		Medium* m = NULL;
-		
 		if (name == "homogeneous") {
 			m = new HomogeneousMedium(sig_a, sig_s, g);
 		}
@@ -740,7 +731,6 @@ namespace pbrt {
 		else
 			Warning("Medium \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		
 		return std::shared_ptr<Medium>(m);
 	}
 
@@ -749,7 +739,6 @@ namespace pbrt {
 		const Transform& light2world,
 		const MediumInterface& mediumInterface) {
 		std::shared_ptr<Light> light;
-		
 		if (name == "point")
 			light =
 			CreatePointLight(light2world, mediumInterface.outside, paramSet);
@@ -768,7 +757,6 @@ namespace pbrt {
 		else
 			Warning("Light \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		
 		return light;
 	}
 
@@ -778,14 +766,12 @@ namespace pbrt {
 		const ParamSet& paramSet,
 		const std::shared_ptr<Shape>& shape) {
 		std::shared_ptr<AreaLight> area;
-		
 		if (name == "area" || name == "diffuse")
 			area = CreateDiffuseAreaLight(light2world, mediumInterface.outside,
 				paramSet, shape);
 		else
 			Warning("Area light \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		
 		return area;
 	}
 
@@ -808,7 +794,6 @@ namespace pbrt {
 		const TransformSet& cam2worldSet, Float transformStart,
 		Float transformEnd, Film* film) {
 		Camera* camera = nullptr;
-		
 		MediumInterface mediumInterface = graphicsState.CreateMediumInterface();
 		static_assert(MaxTransforms == 2,
 			"TransformCache assumes only two transforms");
@@ -833,7 +818,6 @@ namespace pbrt {
 		else
 			Warning("Camera \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		
 		return camera;
 	}
 
@@ -841,7 +825,6 @@ namespace pbrt {
 		const ParamSet& paramSet,
 		const Film* film) {
 		Sampler* sampler = nullptr;
-		
 		if (name == "lowdiscrepancy" || name == "02sequence")
 			sampler = CreateZeroTwoSequenceSampler(paramSet);
 		else if (name == "maxmindist")
@@ -857,14 +840,12 @@ namespace pbrt {
 		else
 			Warning("Sampler \"%s\" unknown.", name.c_str());
 		paramSet.ReportUnused();
-		
 		return std::shared_ptr<Sampler>(sampler);
 	}
 
 	std::unique_ptr<Filter> MakeFilter(const std::string& name,
 		const ParamSet& paramSet) {
 		Filter* filter = nullptr;
-		
 		if (name == "box")
 			filter = CreateBoxFilter(paramSet);
 		else if (name == "gaussian")
@@ -880,7 +861,6 @@ namespace pbrt {
 			exit(1);
 		}
 		paramSet.ReportUnused();
-		
 		return std::unique_ptr<Filter>(filter);
 	}
 
@@ -986,18 +966,6 @@ namespace pbrt {
 				printf("%*sScale %.9g %.9g %.9g\n", catIndentCount, "", sx, sy, sz);
 	}
 
-	/// <summary>
-	/// PBRTs the look at.
-	/// </summary>
-	/// <param name="ex">The eye x coordinate.</param>
-	/// <param name="ey">The eye y coordinate.</param>
-	/// <param name="ez">The eye z coordinate.</param>
-	/// <param name="lx">The look at point x.</param>
-	/// <param name="ly">The look at point y.</param>
-	/// <param name="lz">The look at point z.</param>
-	/// <param name="ux">The up vector x.</param>
-	/// <param name="uy">The up vector y.</param>
-	/// <param name="uz">The up vector z.</param>
 	void pbrtLookAt(Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
 		Float ux, Float uy, Float uz) {
 		VERIFY_INITIALIZED("LookAt");
@@ -1580,11 +1548,11 @@ namespace pbrt {
 		VERIFY_WORLD("ObjectEnd");
 		if (!renderOptions->currentInstance)
 			Error("ObjectEnd called outside of instance definition");
+		if (PbrtOptions.cat || PbrtOptions.toPly)
+			printf("%*sObjectEnd\n", catIndentCount, "");
 		renderOptions->currentInstance = nullptr;
 		pbrtAttributeEnd();
 		++nObjectInstancesCreated;
-		if (PbrtOptions.cat || PbrtOptions.toPly)
-			printf("%*sObjectEnd\n", catIndentCount, "");
 	}
 
 	STAT_COUNTER("Scene/Object instances used", nObjectInstancesUsed);
@@ -1674,10 +1642,8 @@ namespace pbrt {
 		graphicsState = GraphicsState();
 		transformCache.Clear();
 		currentApiState = APIState::OptionsBlock;
-		
 		ImageTexture<Float, Float>::ClearCache();
 		ImageTexture<RGBSpectrum, Spectrum>::ClearCache();
-		
 		renderOptions.reset(new RenderOptions);
 
 		if (!PbrtOptions.cat && !PbrtOptions.toPly) {
@@ -1714,7 +1680,7 @@ namespace pbrt {
 			Error("Unable to create camera");
 			return nullptr;
 		}
-		 
+
 		std::shared_ptr<Sampler> sampler =
 			MakeSampler(SamplerName, SamplerParams, camera->film);
 		if (!sampler) {
@@ -1723,7 +1689,6 @@ namespace pbrt {
 		}
 
 		Integrator* integrator = nullptr;
-		
 		if (IntegratorName == "whitted")
 			integrator = CreateWhittedIntegrator(IntegratorParams, sampler, camera);
 		else if (IntegratorName == "directlighting")
@@ -1749,7 +1714,7 @@ namespace pbrt {
 			Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
 			return nullptr;
 		}
-		
+
 		if (renderOptions->haveScatteringMedia && IntegratorName != "volpath" &&
 			IntegratorName != "bdpt" && IntegratorName != "mlt") {
 			Warning(

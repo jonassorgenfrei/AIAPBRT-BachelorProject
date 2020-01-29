@@ -74,9 +74,6 @@ namespace pbrt {
 		// when a shading coordinate frame is computed, the SurfaceInteraction is updated
 		// Compute _shading.n_ for _SurfaceInteraction_
 		shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
-		// check if the given shape has the corresponding flag set to reverse the Orientation
-		if (shape && (shape->reverseOrientation ^ shape->transformSwapsHandedness))	// exclusive or
-			shading.n = -shading.n;	// flipping normal's direction
 		if (orientationIsAuthoritative) // flips depending on callers Boolean value (determines which is more authoritatively)
 			n = Faceforward(n, shading.n);	// true geometric normal
 		else

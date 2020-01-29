@@ -46,13 +46,30 @@
 
 namespace pbrt {
 
-// Camera Declarations
+/// <summary>
+/// Camera Declarations holds camera options and defines the interface that all camera
+/// implementations must provide
+/// </summary>
 class Camera {
   public:
     // Camera Interface
-    Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="Camera"/> class.
+	/// </summary>
+	/// <param name="CameraToWorld">The transformation that places the camera in the scene over time.</param>
+	/// <param name="shutterOpen">The shutter open time.</param>
+	/// <param name="shutterClose">The shutter close time.</param>
+	/// <param name="film">Pointer to a film object, that represents the final image.</param>
+	/// <param name="medium">The scattering medium that the camera lies in.</param>
+	Camera(const AnimatedTransform& CameraToWorld, Float shutterOpen,
            Float shutterClose, Film *film, const Medium *medium);
-    virtual ~Camera();
+
+	/// <summary>
+	/// Finalizes an instance of the <see cref="Camera"/> class.
+	/// </summary>
+	virtual ~Camera();
+
 	/// <summary>
 	/// Generates a world space ray corresponding to a sample position on the film plane.
 	/// </summary>
@@ -63,30 +80,58 @@ class Camera {
 
 	/// <summary>
 	/// Geerate a world space ray corresponding to a sample position on the filme plane and 
-	/// computes information about the image area that the ray is sampling. (e.g. information for anti-aliasing computations)
+	/// computes information about the image area (shift xy directions) that the ray is sampling. (e.g. information for anti-aliasing computations)
 	/// </summary>
 	/// <param name="sample">The sample.</param>
 	/// <param name="rd">The rd.</param>
 	/// <returns></returns>
 	virtual Float GenerateRayDifferential(const CameraSample& sample,
                                           RayDifferential *rd) const;
-    virtual Spectrum We(const Ray &ray, Point2f *pRaster2 = nullptr) const;
-    virtual void Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const;
-    virtual Spectrum Sample_Wi(const Interaction &ref, const Point2f &u,
+
+	/// <summary>
+	/// Wes the specified ray.
+	/// </summary>
+	/// <param name="ray">The ray.</param>
+	/// <param name="pRaster2">The p raster2.</param>
+	/// <returns></returns>
+	virtual Spectrum We(const Ray& ray, Point2f* pRaster2 = nullptr) const;
+	
+	/// <summary>
+	/// PDFs the we.
+	/// </summary>
+	/// <param name="ray">The ray.</param>
+	/// <param name="pdfPos">The PDF position.</param>
+	/// <param name="pdfDir">The PDF dir.</param>
+	virtual void Pdf_We(const Ray& ray, Float* pdfPos, Float* pdfDir) const;
+
+	/// <summary>
+	/// Samples the wi.
+	/// </summary>
+	/// <param name="ref">The reference.</param>
+	/// <param name="u">The u.</param>
+	/// <param name="wi">The wi.</param>
+	/// <param name="pdf">The PDF.</param>
+	/// <param name="pRaster">The p raster.</param>
+	/// <param name="vis">The vis.</param>
+	/// <returns></returns>
+	virtual Spectrum Sample_Wi(const Interaction& ref, const Point2f& u,
                                Vector3f *wi, Float *pdf, Point2f *pRaster,
                                VisibilityTester *vis) const;
 
     // Camera Public Data
     AnimatedTransform CameraToWorld;
-    const Float shutterOpen, shutterClose;
+	const Float shutterOpen, shutterClose;
     Film *film;
     const Medium *medium;
 };
 
+/// <summary>
+/// Holds all of the sample values needed to specify a camera ray. 
+/// </summary>
 struct CameraSample {
-    Point2f pFilm;
-    Point2f pLens;
-    Float time;
+    Point2f pFilm;	/// point on the film to which the generated ray carries radiance
+    Point2f pLens;	/// point on the lens the ray passes through
+    Float time;		/// the time at which the ray should sample the scene (use value to linearly interpolate whithing the shutter time range)
 };
 
 inline std::ostream &operator<<(std::ostream &os, const CameraSample &cs) {
