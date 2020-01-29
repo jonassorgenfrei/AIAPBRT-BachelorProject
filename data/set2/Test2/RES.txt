@@ -1,0 +1,40 @@
+Epoch 1/10
+            41s LogLoss: 0.64, val_LogLoss:  0.64
+Epoch 2/10
+            41s LogLoss: 0.63, val_LogLoss:  0.63
+Epoch 3/10
+            42s LogLoss: 0.63, val_LogLoss:  0.63
+Epoch 4/10
+            42s LogLoss: 0.63, val_LogLoss:  0.63
+Epoch 5/10
+            41s LogLoss: 0.63, val_LogLoss:  0.63
+Epoch 6/10
+            42s LogLoss: 0.62, val_LogLoss:  0.62
+Epoch 7/10
+            41s LogLoss: 0.62, val_LogLoss:  0.62
+Epoch 8/10
+            42s LogLoss: 0.62, val_LogLoss:  0.62
+Epoch 9/10
+            41s LogLoss: 0.62, val_LogLoss:  0.62
+Epoch 10/10
+            42s LogLoss: 0.62, val_LogLoss:  0.62
+Average time in model.py: 420.9369033575058s
+2019-08-06 05:04:09.592325
+=============== MODEL TRAINING FINISHED. ===============
+=============== EVALUATE ===============
+AUC on the validation set: 0.70
+Accuracy on the validation set: 0.66
+AUC on the test set: 0.70
+Accuracy on the test set: 0.66
+=============== Export ===============
+
+
+# Model Parameter
+trainModel = True                  # Flag Train Model
+PERIODS = 10
+LEARNING_RATE = 0.01
+STEPS = 900
+BATCH_SIZE = 60
+REGULARIZATION_STRENGTH = 0.1
+hidden_units=[600, 600, 400, 400, 200]
+

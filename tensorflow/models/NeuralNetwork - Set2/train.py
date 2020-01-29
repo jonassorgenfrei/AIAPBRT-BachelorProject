@@ -14,14 +14,6 @@ import time
 
 # tensorflow
 import tensorflow as tf
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
-sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-from keras import backend as K
-import tensorflow as tf
-config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.8
-session = tf.Session(config=config)
-K.set_session(session)
 # panda (column-oriented data analysis API)
 import pandas as pd
 # NumPython
@@ -44,9 +36,9 @@ from model import input_fn, train_model
 # Program Flags
 describeData = True                 # Flag for descripion of import data
 describeTrainingSets = True         # Flag for 
-showDistributionPlots = False       # Flag for showing input distributions
+showDistributionPlots = True       # Flag for showing input distributions
 
-describeSplittedData = False        # Flag Show Information about splitted sets
+describeSplittedData = True        # Flag Show Information about splitted sets
 printDataSet = True                # Flag for printing inputDataset
 plotFeatures = False
 
@@ -54,7 +46,7 @@ evaluateModel = True
 exportModel = True
 
 # Dataset
-trainingTestPercentage = 0.7        # [0,1] Percentage of Training Test of complete 
+trainingTestPercentage = 0.8        # [0,1] Percentage of Training Test of complete 
 randomizeTrainingData = True       # Flag for randomization of Training-Validation-Data
 trainingValidationPercentage = 0.8  # [0,1] Percentage of training/validationData from complete trainingSet
 createSyntAngles = False            # Flag for creating syntectic Angles of vectors
@@ -63,9 +55,9 @@ useFeatureCrosses = False           # Flag for crossing features
 # Model Parameter
 trainModel = True                  # Flag Train Model
 PERIODS = 10
-LEARNING_RATE = 0.002
+LEARNING_RATE = 0.001
 STEPS = 900
-BATCH_SIZE = 60
+BATCH_SIZE = 40
 REGULARIZATION_STRENGTH = 0.1
 
 ########################
@@ -93,7 +85,7 @@ if __name__ == '__main__':
     Path('model').mkdir(exist_ok=True)
     tf.compat.v1.logging.set_verbosity(logging.ERROR)
     handlers = [
-        logging.FileHandler('model/train_set02_v01.log'),
+        logging.FileHandler('model/train_set02_v07.log'),
         logging.StreamHandler(sys.stdout)
     ]
     logging.getLogger('tensorflow').handlers = handlers
@@ -104,7 +96,7 @@ if __name__ == '__main__':
 
     # Import Data
     #############
-    dataframe = pd.read_csv("../../data/set2/completeSet.csv", sep=",") # relational data table of intersection tests
+    dataframe = pd.read_csv("../completeSet6.csv", sep=",") # relational data table of intersection tests
     print("#################################")
     print("Imported Data; Records:", len(dataframe))
     print("#################################")
@@ -193,6 +185,7 @@ if __name__ == '__main__':
     #############
     if(trainModel) :
         print("=============== TRAIN MODEL ===============")
+
         # Create a DNNClassifier regressor object
         hidden_units=[600, 600, 400, 400]
         #optimizer = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE)      # TODO: TRY DIFFERENT OPTIMIZER
@@ -200,7 +193,7 @@ if __name__ == '__main__':
         optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, 5.0)
         dnn = tf.estimator.DNNClassifier(
             feature_columns=construct_feature_columns(training_examples),
-            model_dir='model_set02/v003_synth',
+            model_dir='model_set02/v006',
             hidden_units=hidden_units,        # defines the structure of the NN, provides a list of ints, where each int corresponds to a hidden layer and indicates the number of nodes in it
             optimizer=optimizer
         )
@@ -252,6 +245,6 @@ if __name__ == '__main__':
                        for key in training_examples.keys()]
             feature_spec = tf.feature_column.make_parse_example_spec(feature_columns)
             serving_input_receiver_fn2 = tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec)
-            dnn.export_saved_model('saved_model_set02_3', serving_input_receiver_fn2);
+            dnn.export_saved_model('saved_model_set02_7s', serving_input_receiver_fn2);
 
         
